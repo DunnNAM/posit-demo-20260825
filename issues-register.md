@@ -302,6 +302,44 @@ intention to add per-chart footnotes with unknown counts — the same trap.
 **Action:** decide in Day 2's metrics layer and record as a decision. Whatever is chosen must
 be visible in the output, not silent.
 
+### I-018 — Two working copies on two machines; registers can diverge
+**Severity:** Medium · **Status:** Open · **Owner:** Nathan · **Raised:** 2026-08-19, Day 1 ·
+**Due:** standing, to Day 5
+
+The repository is cloned in two places on two different machines:
+
+| Machine | Path | Role |
+|---|---|---|
+| Home | `C:/Users/namdu/OneDrive/Documents/ShinyStuff/posit-demo-20260825` | Claude Code sessions, build work |
+| Work laptop | `D:/Development/posit-demo-20260825` | RStudio, **and the Day 5 dress rehearsal machine** |
+
+**Observed once already.** On Day 1 the home copy pushed `52022c7` (register sync) while the
+work laptop held an unpushed `b6c0c76` (delete `R/dependencies.R`, add `renv.lock`). The
+laptop's pull produced merge commit `303905a`. It resolved cleanly **only because the two
+commits touched disjoint files.** The register files are edited from both machines and are the
+most likely thing to be edited in both at once — that case does not resolve cleanly, and
+resolving a conflicted register by hand is how a decision silently goes missing.
+
+**Not caused by the `D:/Development` path.** This is ordinary two-clone drift and would occur
+from any location. The path carries its own separate risks — see I-005 (real database names in
+the adjacent MDT prototype; the `git rev-parse --show-toplevel` gate) and I-012 (renv scanning
+sibling projects when the `.Rproj` is opened one level up).
+
+**Neither copy can be deleted.** The dress rehearsal runs on the work machine (Day 5), and the
+Claude Code sessions run at home.
+
+**Mitigation — discipline, since tooling cannot enforce it across machines:**
+1. `git pull --ff-only` as the first action on arriving at either machine.
+2. Commit and push before leaving either machine. Never walk away with uncommitted registers.
+3. `git config pull.ff only` set in both clones, so an accidental pull refuses rather than
+   silently merging.
+4. On the work laptop, confirm `git rev-parse --show-toplevel` returns the demo folder before
+   any push (the I-005 gate).
+
+**Carried forward:** if a register conflict does occur, resolve it by keeping **both** sides of
+the change — a `D-###` or `I-###` entry is append-only in practice, so a conflict almost always
+means two additions, not a genuine contradiction.
+
 ---
 
 ## Low

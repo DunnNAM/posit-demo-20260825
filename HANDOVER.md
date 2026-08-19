@@ -60,6 +60,7 @@ needs no pruning.
 | I-015 | Medium | `manifest.json` must be regenerated whenever files or packages change |
 | I-016 | Medium | Divergent working directories — apply the `root.dir` mitigation in the Day 3 report |
 | I-017 | Low (presentation) | Free-tier content is public; state this explicitly during the demo |
+| I-018 | Medium | Two working copies (home, work laptop) — pull `--ff-only` on arrival, push before leaving |
 
 ---
 
