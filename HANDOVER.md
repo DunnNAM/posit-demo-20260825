@@ -20,7 +20,7 @@ in about ten seconds, sharing one canonical code layer.
 | Item | Path | Status |
 |---|---|---|
 | Shiny probe app | `app.R` | Deployed, all diagnostics pass |
-| Quarto probe report | `report/facility-report.qmd` | Deployed, all chunks execute |
+| Quarto probe report | `facility-report.qmd` (root — D-035) | Deployed, all chunks execute |
 | Shared layer | `R/smoke_shared.R` | Sourced successfully by both |
 | Probe data | `data/smoke_data.csv` | Read successfully by both |
 | Manifest | `manifest.json` (root) | Serves both content items |
@@ -92,10 +92,14 @@ Rscript --vanilla tests/verify_shared_layer.R
 Entry points: `caq_load_data()`, `caq_calculate_indicator()`, `caq_valid_stratifiers()`,
 `caq_suppress()`, `caq_suppression_caption()`, `caq_stratifiers()`.
 
-**The next task is the Day 3 Quarto report.** One thing to settle first: whether
-`facility-report.qmd` moves to `report/` (see below). The palette is done — `R/theme.R` now
-carries CAQ's real colours, adopted from `src/theme.R` in the private
+**The next task is the Day 3 Quarto report**, and nothing blocks it. The entry point stays at
+`facility-report.qmd` in the repository root (D-035) — do not move it to `report/`, as that
+breaks the Connect Cloud primary-file binding D-024 exists to protect. The palette is done:
+`R/theme.R` carries CAQ's real colours, adopted from `src/theme.R` in the private
 `DunnNAM/posit-presentation` repository (I-022, closed).
+
+Apply the I-016 `root.dir` mitigation in the report's setup chunk, replacing `smoke_shared.R`
+with a file that will still exist — `R/metrics.R` is the safe choice now.
 
 ### Specification
 
@@ -203,7 +207,8 @@ Replace `smoke_shared.R` with whichever shared file exists by then.
    copies currently in the repository predate the Day 1 findings and are stale.
 3. **Overwrite** `README.md` — the version in the repository still describes the abandoned
    flat-root layout and the now-completed Day 1 checklist.
-4. Delete `report/manifest.json` if present. It is ignored by Connect Cloud and its presence
-   is misleading (D-017).
+4. Delete any `manifest.json` sitting in a content item's own subdirectory if present. It is
+   ignored by Connect Cloud and its presence is misleading (D-017). Note the Quarto entry
+   point lives at the repository root, not in `report/` (D-035).
 5. Commit, push, and confirm both content items still deploy — that is the I-010 daily
    deployment for the day.

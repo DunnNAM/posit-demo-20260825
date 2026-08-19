@@ -8,7 +8,7 @@ Connect Cloud from this single GitHub repository.
 > plausible but not endorsed (see `decision-register.md`, D-001 and D-002).
 
 **Status: Day 1 complete.** The deployment path is proven end to end. `app.R` and
-`report/facility-report.qmd` currently contain placeholder probe content; real content
+`facility-report.qmd` currently contain placeholder probe content; real content
 replaces it in place from Day 3 (D-024).
 
 ---
@@ -22,7 +22,7 @@ serves both content items — no duplication, no build step.
 | Path | Purpose |
 |---|---|
 | `app.R` | Shiny dashboard — Connect Cloud primary file |
-| `report/facility-report.qmd` | Quarto report — Connect Cloud primary file |
+| `facility-report.qmd` | Quarto report — Connect Cloud primary file. At the root, not in `report/` (D-035) |
 | `manifest.json` | **Single root manifest**, union of both products' packages |
 | `dependencies.R` | Declaration only — never sourced. See below. |
 | `R/` | Shared layer, used by **both** products |
@@ -64,7 +64,7 @@ shiny::runApp()      # run the app
 ```
 
 ```
-quarto render report/facility-report.qmd
+quarto render facility-report.qmd
 ```
 
 Use the Quarto CLI or RStudio's Render button — **not** `quarto::quarto_render()`. The `quarto`

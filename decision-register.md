@@ -374,25 +374,33 @@ suppression footnotes on funnel plots must be rendered as separate UI text (see 
 **Status:** **RESOLVED 2026-08-19** by Day 1 deployment evidence · **Supersedes** the original
 flat-root decision and the Option A/B/C choice raised earlier the same day.
 
-**Confirmed layout:**
+**Confirmed layout** *(report path corrected by D-035 — see the note below)*:
 ```
 /app.R                        Shiny entry point
 /manifest.json                SINGLE manifest, union of packages
 /R/                           Shared layer — one canonical copy
 /data/                        Committed synthetic CSVs
-/report/facility-report.qmd   Quarto entry point
+/facility-report.qmd          Quarto entry point
 ```
+
+> **Corrected 2026-08-19 (D-035).** This decision originally recorded the Quarto entry point as
+> `/report/facility-report.qmd`, and the evidence paragraph below was written on that
+> assumption. The move into a `report/` subdirectory was intended but never carried out: the
+> repository, `manifest.json` and the working Connect Cloud content item are all on the root
+> path. D-035 keeps it there. Everything else in this decision — the full clone, the single
+> root manifest, the ignored subdirectory manifest, the shared `R/` layer — is unaffected and
+> was verified as written.
 
 **Evidence.** Connect Cloud performs a full `git clone` of the repository into
 `/cloud/project` and sets that as the working directory. The manifest's file list does not
-filter the bundle — the report deployed from `report/` successfully reached `R/` and `data/`
-at the root. The build log further showed that a manifest in the content's own subdirectory
-was **ignored**: Connect Cloud read the root manifest (94 packages, `appmode: shiny`) and took
-the content type from the publish request instead, noting the mismatch and proceeding.
+filter the bundle — the report reached `R/` and `data/` at the root. The build log further
+showed that a manifest in a content item's own subdirectory was **ignored**: Connect Cloud read
+the root manifest (94 packages, `appmode: shiny`) and took the content type from the publish
+request instead, noting the mismatch and proceeding.
 
 **Consequences:**
-1. One `manifest.json` at the root, carrying the union of both content items' packages.
-   `report/manifest.json` is redundant and should be deleted.
+1. One `manifest.json` at the root, carrying the union of both content items' packages. Any
+   manifest in a content item's subdirectory is redundant and should be deleted.
 2. Content type is selected per publish request in the Connect Cloud interface, not by the
    manifest.
 3. The shared `R/` layer exists in exactly one place. **No build script, no duplicated files,
@@ -484,6 +492,48 @@ the presentation narrating two unrelated publishing mechanisms.
 **Consequence:** every content update reaches Connect Cloud by commit and push. Note that the
 IDE publishing dialog (rsconnect / Posit Publisher) is a different path from the Git-backed
 flow and should not be used for this project.
+
+### D-035 — `facility-report.qmd` stays at the repository root; `report/` is not used
+**Status:** Agreed · **Date:** 2026-08-19 · **Corrects:** D-017's stated layout
+
+The Quarto entry point remains `facility-report.qmd` at the repository root. No `report/`
+subdirectory is created. D-017 described the layout as `/report/facility-report.qmd`; that was
+written while the layout was still being resolved and the move was never carried out. The
+working repository, the Day 1 deployment evidence and `manifest.json` all reflect the root
+layout — `manifest.json` lists `app.R`, `facility-report.qmd`, `R/smoke_shared.R`,
+`data/smoke_data.csv` and `dependencies.R`.
+
+**Rationale.**
+
+1. **The move buys nothing functional.** Connect Cloud clones the whole repository and both
+   products run with the working directory at the tree root (I-016), so `data/patients.csv`
+   and `R/metrics.R` resolve identically whichever directory the `.qmd` sits in.
+2. **It would add a trap rather than remove one.** Under I-016 rule 4, files beside the `.qmd`
+   need a `report/` prefix when referenced from inside it, because the working directory is
+   the tree root and not the document's own folder. At the root that trap does not exist.
+3. **It would break the deployment binding D-024 exists to protect.** Connect Cloud content
+   items bind to a repository, branch and *primary file*. The report content item has been
+   deploying successfully since Day 1 against the root path. Moving the file means
+   reconfiguring or recreating that content item four days before the demonstration, against
+   I-010 and I-008 — spending real risk on tidiness.
+
+**Consequence:** the documents were corrected to match the working repository, rather than the
+repository changed to match the documents. `CLAUDE.md`, `README.md`, `HANDOVER.md` and D-017
+updated in the same commit. Revisit after the demonstration if the root becomes cluttered —
+at that point the deployment record is no longer precious.
+
+### D-036 — Committed Quarto render output is removed and ignored
+**Status:** Agreed · **Date:** 2026-08-19
+
+`facility-report_files/` — 14 files of rendered output including bootstrap bundles, a `.woff`
+font and a figure PNG — is deleted from the repository and excluded by `.gitignore`.
+
+**Rationale:** Connect Cloud renders from source on its own build host and never uses
+pre-rendered output (D-027), so these files served no purpose. They obscured the root
+directory, and committed build artefacts invite the question of whether the deployed output is
+the rendered one — which would undercut the push-to-redeploy narrative.
+**Consequence:** no effect on either deployment binding. Local renders will recreate the
+directory; it stays untracked.
 
 ---
 

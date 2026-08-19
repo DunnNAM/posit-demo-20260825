@@ -75,7 +75,8 @@ data is invented. Design choices serve the demonstration.
 /R/                           Shared layer — ONE canonical copy, used by both products
 /data/                        Committed synthetic CSVs
 /data-raw/                    Seeded generator script
-/report/facility-report.qmd   Quarto entry point (Connect Cloud primary file)
+/facility-report.qmd          Quarto entry point (Connect Cloud primary file) — root, NOT
+                              report/ (D-035). Moving it breaks the deployment binding.
 /project-brief.md /decision-register.md /issues-register.md /HANDOVER.md
 ```
 
@@ -115,7 +116,7 @@ shiny::runApp()                                   # run the app
 ```
 
 ```
-quarto render report/facility-report.qmd          # render the report (CLI, not the R package)
+quarto render facility-report.qmd                 # render the report (CLI, not the R package)
 ```
 
 **Do not use `quarto::quarto_render()`** (D-026) — the `quarto` R package is deliberately not
