@@ -1,0 +1,131 @@
+---
+title: "CAQ Posit Connect Cloud demonstrator"
+subtitle: "Day 1 deployment probe"
+author: "Cancer Alliance Queensland"
+date: today
+format:
+  html:
+    theme: flatly
+    toc: true
+    toc-location: left
+    embed-resources: false
+    code-fold: true
+    fig-width: 8
+    fig-height: 4.5
+execute:
+  echo: false
+  warning: false
+  message: false
+---
+
+<!--
+=============================================================================
+facility-report.qmd — CAQ Posit Connect Cloud demonstrator
+
+STATUS: Day 1 deployment probe. Placeholder content.
+
+Per D-024 this file keeps its name for the life of the project, so the Connect
+Cloud deployment record created today is reused by every later push.
+
+What this probe tests (I-001):
+  3. Working directory at render time
+  4. Sourcing shared code from R/
+  5. Reading committed data from data/
+  6. ggplot2 rendering on the build host
+
+Note on fonts (D-022): no showtext, no font_add_google(). The report uses the
+Quarto/Bootstrap default font stack, so it carries no render-time font
+dependency. Only the Shiny app exercises the network font path.
+=============================================================================
+-->
+
+```{r}
+#| label: setup
+
+# Explicit library() calls so renv detects dependencies (D-015). renv scans .qmd
+# chunks as well as .R files, so this block contributes to the lockfile.
+library(dplyr)
+library(readr)
+library(tibble)
+library(ggplot2)
+library(scales)
+library(gt)
+
+# Shared layer — same relative path used by app.R. This is the D-017 flat-root
+# assumption under test.
+source("R/smoke_shared.R")
+
+probe_data <- smoke_read_data()
+```
+
+::: {.callout-important title="Synthetic data"}
+All data in this report is synthetic and generated for demonstration purposes.
+It does not describe real patients, real facilities, or real clinical
+performance. Indicator definitions are plausible but are not endorsed (D-002).
+:::
+
+## Purpose of this document
+
+This is a deployment probe, not a report. Its only job is to confirm that a
+Quarto document and a Shiny application can both be published to Posit Connect
+Cloud from a single repository sharing one `renv.lock`, and that both resolve
+shared code and committed data identically after deployment.
+
+The facility-level indicator content replaces everything below from Day 3.
+
+## Environment diagnostics
+
+Compare this table against the equivalent table in the deployed Shiny
+application. **The working directory row is the one that matters** — if the two
+products disagree, the shared `R/` layer cannot be shared and issue I-001 falls
+back to a two-repository split.
+
+```{r}
+#| label: diagnostics
+
+smoke_diagnostics(product = "Quarto report") |>
+  gt::gt() |>
+  gt::cols_label(check = "Check", value = "Value") |>
+  gt::tab_options(table.font.size = gt::px(13))
+```
+
+## Data read check
+
+Confirms that a CSV committed to `data/` is readable after deployment
+(I-001, check 5).
+
+```{r}
+#| label: data-check
+
+probe_data |>
+  gt::gt() |>
+  gt::fmt_percent(columns = rate, decimals = 1) |>
+  gt::cols_label(
+    facility_id = "Facility",
+    year        = "Year",
+    n_cases     = "Cases",
+    n_events    = "Events",
+    rate        = "Rate"
+  ) |>
+  gt::tab_options(table.font.size = gt::px(13))
+```
+
+## Graphics device check
+
+Confirms `ggplot2` renders on the Connect Cloud build host (I-001, check 6).
+
+```{r}
+#| label: plot-check
+
+smoke_plot(probe_data)
+```
+
+## Next steps
+
+| Day | Milestone |
+|---|---|
+| 1 | This probe deployed; I-001 checklist completed |
+| 2 | Synthetic data generator; shared prep, metrics and suppression layer |
+| 3 | Facility report content replaces this document |
+| 4 | Shiny dashboard content replaces the probe app |
+| 5 | Persona switcher, polish, dress rehearsal |
