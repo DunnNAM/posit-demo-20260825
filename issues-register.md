@@ -142,7 +142,9 @@ system library. Fixing the working directory with `setwd()` is session-scoped an
 prevent recurrence.
 
 ### I-016 — The two products run from different absolute paths
-**Severity:** Medium · **Status:** Open — mitigation designed, to apply on Day 3 ·
+**Severity:** Medium · **Status:** **Mitigated 2026-08-19** — the `root.dir` walk-up is applied
+in `facility-report.qmd`, keyed on `R/metrics.R`. Still to confirm on the first deployment of
+the real report, since only Connect Cloud exercises the ephemeral render directory. ·
 **Raised:** 2026-08-19, Day 1
 
 The Shiny app runs from `/cloud/project`. The Quarto report renders in an ephemeral copy at
@@ -343,8 +345,10 @@ the change — a `D-###` or `I-###` entry is append-only in practice, so a confl
 means two additions, not a genuine contradiction.
 
 ### I-019 — CSV round-trip drops factor ordering; `data_prep.R` must restore it
-**Severity:** Medium · **Status:** Open · **Due:** Day 2, with the shared layer ·
-**Raised:** 2026-08-19
+**Severity:** Medium · **Status:** **Mitigated 2026-08-19** — `R/data_prep.R` sets explicit
+levels for `stage`, `sex`, `seifa_quintile`, both age groups and both HHS columns on read, and
+`caq_order_interval_labels()` orders the age intervals by parsed numeric lower bound rather
+than by string sort. Asserted in `tests/verify_shared_layer.R`. · **Raised:** 2026-08-19
 
 `age_group_5yr` and `age_group_10yr` are created as ordered factors by the generator, but CSV
 carries no type information: `readr::read_csv()` returns them as character. `sex`,

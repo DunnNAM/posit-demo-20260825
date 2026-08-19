@@ -1,226 +1,214 @@
 # HANDOVER — CAQ Posit Connect Cloud demonstrator
 
-**Handover date:** 19 August 2026, end of Day 1
-**Demo date:** 24 August 2026 (5 days from project start)
-**Status:** Day 1 complete, one day ahead of plan. Deployment path proven end to end.
+**Handover date:** 19 August 2026, end of the second working session
+**Demo date:** 24 August 2026
+**Status:** Days 1, 2 and 3 of the plan are complete. **Two days ahead of schedule.**
 
-This document hands the work from a browser-based assistant session to Claude Code running
-locally against the repository. Read `CLAUDE.md` first for conventions, then this.
-
----
-
-## 1. Where the project stands
-
-**Day 1 objective was to prove the deployment path before writing any real content.** That is
-done. Both content types deploy to Posit Connect Cloud from a single public GitHub repository,
-in about ten seconds, sharing one canonical code layer.
-
-### Deployed and working
-
-| Item | Path | Status |
-|---|---|---|
-| Shiny probe app | `app.R` | Deployed, all diagnostics pass |
-| Quarto probe report | `facility-report.qmd` (root — D-035) | Deployed, all chunks execute |
-| Shared layer | `R/smoke_shared.R` | Sourced successfully by both |
-| Probe data | `data/smoke_data.csv` | Read successfully by both |
-| Manifest | `manifest.json` (root) | Serves both content items |
-
-Both files contain **placeholder content only**. Per D-024 they keep their filenames for the
-life of the project — real content replaces placeholder content in place, so the Connect Cloud
-deployment records created on Day 1 are reused all week and the push-to-redeploy demonstration
-runs against content that has been deploying successfully since the start.
-
-### What Day 1 established (see `issues-register.md` I-001 for the full result table)
-
-All eight verification checks closed. The consequential findings are recorded in `CLAUDE.md`
-under "Deployment facts" — read them rather than rediscovering them. In summary: Connect Cloud
-needs `manifest.json` and ignores `renv.lock`; subdirectory manifests are ignored; the whole
-repo is cloned so a single shared `R/` layer works; the two products run from different
-absolute paths but both from the tree root; packages arrive pre-built so the dependency set
-needs no pruning.
+Read `CLAUDE.md` first for conventions, then this. The registers
+(`decision-register.md`, `issues-register.md`) are the project memory — 39 decisions
+(`D-001`–`D-039`) and 24 issues (`I-001`–`I-024`). If it is not written down, it did not
+happen.
 
 ---
 
-## 2. Registers — read these, they are the project memory
+## 1. Start here, tomorrow
 
-| File | Contains |
+You will most likely be on the **work laptop** (`D:/Development/posit-demo-20260825`), which
+has not been touched since this morning and is several commits behind. Do this first:
+
+```
+cd /d D:\Development\posit-demo-20260825
+git config pull.ff only          # not yet set on that clone (I-018)
+git rev-parse --show-toplevel     # must return the demo folder, not D:/Development (I-005)
+git status                        # anything uncommitted from before RStudio was closed?
+git pull --ff-only
+```
+
+Nineteen commits went up today. If the pull refuses because of local commits, **do not merge
+blindly** — see I-018; the registers are the files most likely to conflict, and a register
+conflict almost always means two additions rather than a contradiction, so keep both sides.
+
+---
+
+## 2. What exists now
+
+| Area | State |
 |---|---|
-| `project-brief.md` | Scope, audience, indicators, **full data specification (§6)**, architecture, timeline |
-| `decision-register.md` | 27 decisions (`D-001`–`D-027`). All agreed; none pending. |
-| `issues-register.md` | 17 issues (`I-001`–`I-017`). Open items listed below. |
+| **Data** | `data-raw/generate_synthetic_data.R` + five committed CSVs. 45,000 patients. Byte-reproducible from seed 20260824, verified across two package environments. |
+| **Shared layer** | `R/data_prep.R`, `R/metrics.R`, `R/suppression.R`, `R/plots.R`, `R/theme.R`. Verified by `tests/verify_shared_layer.R`. |
+| **Report** | `facility-report.qmd` — written, rendered, every figure checked against the shared layer. Replaces the probe in place (D-024). |
+| **App** | `app.R` — **still the Day 1 probe.** This is tomorrow's work. |
+| **Deployment** | Both content items bound to root primary files. Last deployed content is the probe app + the new report. |
 
-### Open issues carried into Day 2
+### Entry points into the shared layer
 
-| ID | Severity | Summary |
-|---|---|---|
-| I-005 | High (at first push) | Public repo — no real DB/schema names anywhere, including comments |
-| I-008 | High | Live demo depends on network, GitHub and Connect Cloud from the presentation room |
-| I-010 | High | Deploy something every day; the repo should never go 24h without a successful deployment |
-| I-015 | Medium | `manifest.json` must be regenerated whenever files or packages change |
-| I-016 | Medium | Divergent working directories — apply the `root.dir` mitigation in the Day 3 report |
-| I-017 | Low (presentation) | Free-tier content is public; state this explicitly during the demo |
-| I-018 | Medium | Two working copies (home, work laptop) — pull `--ff-only` on arrival, push before leaving |
-| I-019 | Medium | CSV drops factor ordering — `data_prep.R` must set explicit levels |
-| I-020 | Low | Largely resolved — library restored via P3M snapshots (D-037); CSVs byte-identical. Laptop check is now confirmation only |
-| I-021 | Low | Stage-adjusted S2 gap is a noisy estimator; tolerance widened, no action |
-| I-023 | Low | `ggplotly()` rewrites legends too — mitigated in `plots.R`; check rendered output, not the plot pane |
-| I-024 | Low | Local Quarto is RStudio's 1.3.353, callable only via the 8.3 short path; Connect Cloud runs newer |
+```r
+caq_load_data()                 # -> list(patients, facilities, hhs, indicators, personas)
+caq_calculate_indicator(dat, indicators, id, group_by = character())
+caq_valid_stratifiers(indicators, id)     # drives the app's menu (D-008)
+caq_suppress(res, mode = c("table","funnel"))
+caq_suppression_caption(res, mode)
+caq_stratifiers()                          # display label -> column name
+```
+
+Plot functions in `R/plots.R`: `caq_plot_indicator_bar()`, `caq_plot_distribution()`,
+`caq_plot_funnel()`, `caq_plot_trend()`, `caq_funnel_limits()`, `caq_format_value()`.
+
+### Verify everything still works
+
+```
+Rscript --vanilla tests/verify_shared_layer.R          # exits 0, 22 checks
+Rscript --vanilla data-raw/generate_synthetic_data.R   # regenerates, all assertions pass
+```
 
 ---
 
-## 3. The immediate next task
+## 3. Tomorrow's task — the Shiny app (Day 4)
 
-**DONE 2026-08-19 — `data-raw/generate_synthetic_data.R` is written, run and validated.**
-The five CSVs in `data/` are committed. All assertions pass; achieved magnitudes are recorded
-in D-030 (amended), D-031, D-032 and D-033.
+`app.R` currently holds Day 1 probe content. Replace it **in place** — never rename it, or the
+Connect Cloud deployment record is lost (D-024).
 
-Achieved signal magnitudes, for narration:
+### What it must do
+
+1. **Stock `bslib::page_sidebar()`** (D-013). The old CAQ prototype's filter rail, overlay
+   drawer, chip strip and 736-line stylesheet are explicitly not being reproduced.
+2. **Build the group-by menu from `caq_valid_stratifiers()`** (D-008) so IND-01 and IND-06 can
+   never be grouped by a facility dimension. The calculation layer also refuses it, but the
+   menu is where the audience sees the guardrail.
+3. **Reveal S1.** This is the payoff. `caq_plot_trend()` exists and the report deliberately
+   never calls it (D-038). The app plots Ironbark Southbank's colorectal prolonged-LOS rate by
+   year: baseline ~12%, **peak 28.4% in 2023**, corrected to **9.8% in 2024**. The report could
+   only show 13.3% → 20.1% across two periods.
+4. **Show suppression actually firing** (D-039). At facility × year × stream there are 21 cells
+   below the threshold of five; the report's aggregations never reach it.
+5. Carry the synthetic-data statement on the landing view (D-002).
+
+### Day 5 stretch
+
+Persona switcher (D-004), driven by `user_roles.csv` which is already generated. Narration
+line: *"in production this comes from the authenticated session, not a dropdown."*
+
+### Before the app deploys
+
+**Regenerate the manifest** (I-015) — this is the one outstanding chore and it is now overdue:
+
+```r
+rsconnect::writeManifest(dependencyResolution = "library")
+```
+
+`dependencyResolution = "library"` is required. The file list has changed a great deal today:
+`R/` gained five files, `data/` five, plus `data-raw/` and `tests/`, and the report added `gt`,
+`plotly` and `htmltools`.
+
+---
+
+## 4. Achieved signal magnitudes — for narration
+
+These are measured from the committed data, not targets.
 
 | Signal | What the data shows |
 |---|---|
-| **S1** | F04 colorectal prolonged LOS: 12.5 / 12.8 / 11.8% (2015–17), rising to **28.4% in 2023**, correcting to **9.8% in 2024**. The report's two periods show only 13.3% → 20.1%. |
-| **S2** | Lung surgery rate 22.2% rest of state vs **12.1%** in H5+H6 — a 10.1pp crude gap. |
-| **S3** | Stage IV in lung: 44.7% rest of state vs **53.3%** in H5+H6. Explains 44% of the S2 gap; 5.7pp of access residual remains. |
+| **S1** | Ironbark Southbank (F04), colorectal prolonged LOS: 12.5 / 12.8 / 11.8% (2015–17), rising through 2018–2023 to **28.4%**, correcting to **9.8%** in 2024. Two-period view: 13.3% → 20.1%. |
+| **S2** | Lung surgery rate **22.2%** rest of state vs **12.1%** in Kurrajong + Melaleuca — a 10.1pp crude gap. |
+| **S3** | Lung stage IV: **44.7%** rest of state vs **53.3%** in those two HHSs. Stage explains **44%** of the S2 gap, leaving a 5.7pp service-access residual. |
 
-**DONE 2026-08-19 — the shared `R/` layer is written and verified.**
-`R/data_prep.R`, `R/metrics.R`, `R/suppression.R`, `R/theme.R`, with
-`tests/verify_shared_layer.R` checking the layer against direct calculations on the raw CSV
-(I-011). All checks pass; run it with:
+**The S1 contrast is the argument of the whole demonstration.** The report can show that the
+facility deteriorated. It cannot show when it began, whether it is ongoing, or that it was
+already fixed. Do not weaken this by adding a trend line to the report.
 
+---
+
+## 5. Open issues
+
+| ID | Severity | Summary |
+|---|---|---|
+| I-005 | High at push | Public repo — no real DB/schema/server names anywhere, including comments |
+| I-008 | High | Live demo depends on network, GitHub and Connect Cloud from the presentation room |
+| I-010 | High | Deploy something every day; never 24h without a successful deployment |
+| I-015 | **Medium — overdue** | `manifest.json` must be regenerated; file list has changed substantially |
+| I-017 | Low (presentation) | Free-tier content is public — state this explicitly during the demo |
+| I-018 | Medium | Two working copies; pull `--ff-only` on arrival, push before leaving |
+| I-021 | Low | Stage-adjusted S2 gap is a noisy estimator; tolerance widened, no action |
+
+Recently resolved, listed so nobody re-opens them: I-009 (D-034), I-016 (mitigation applied),
+I-019 (explicit factor levels), I-020 (library restored, CSVs byte-identical), I-022 (real
+palette adopted), I-023 (ggplotly legends), I-024 (Quarto path workaround).
+
+---
+
+## 6. Environment notes — hard-won, do not re-derive
+
+**Restoring the library on a machine without matching Rtools** (D-037). CRAN serves Windows
+binaries only for the *current* version of each package, so `renv.lock`'s pinned older versions
+fall back to source builds. The home machine has only Rtools43 against R 4.5.2, and no admin
+rights. Restore from Posit Package Manager dated snapshots instead:
+
+```r
+options(renv.config.repos.override = c(
+  P3M_MAY = "https://packagemanager.posit.co/cran/2026-05-01",
+  P3M_APR = "https://packagemanager.posit.co/cran/2026-04-15"
+))
+renv::restore(prompt = FALSE)
 ```
-Rscript --vanilla tests/verify_shared_layer.R
-```
 
-Entry points: `caq_load_data()`, `caq_calculate_indicator()`, `caq_valid_stratifiers()`,
-`caq_suppress()`, `caq_suppression_caption()`, `caq_stratifiers()`.
+94 packages, all binaries, eleven seconds. **This is also demonstration material** — it is a
+lived example of the Package Manager capability that is one of the audience's stated hooks.
 
-**DONE 2026-08-19 — the Quarto report is written, rendered and verified.**
-`facility-report.qmd` replaces the probe content in place (D-024), with `R/plots.R` added as
-the shared plot layer. The I-016 `root.dir` walk-up is applied in the setup chunk, keyed on
-`R/metrics.R`. Renders clean; every figure was checked against the shared layer.
+**Four hypotheses were tested and eliminated** before finding that cause: OneDrive file
+locking, blocked process spawning, Windows MAX_PATH, and install concurrency. Moving the
+repository out of OneDrive would **not** have helped. Do not re-run those experiments.
 
-Render locally with (I-024 — Quarto is not on PATH here):
+**Rendering the report locally** (I-024). Quarto is not on PATH on the home machine; the only
+copy is RStudio's bundled **1.3.353**, whose launcher breaks on the space in `Program Files`:
 
 ```
 C:\PROGRA~1\RStudio\RESOUR~1\app\bin\quarto\bin\quarto.cmd render facility-report.qmd
 ```
 
-**The next task is the Day 4 Shiny app.** It reuses `R/plots.R` directly — including
-`caq_plot_trend()`, which the report deliberately never calls (D-038). The app is where the S1
-year-by-year series is revealed, and where suppression actually fires (D-039).
+Connect Cloud runs a much newer Quarto, so **a clean local render is weaker evidence than it
+looks**. The first deployment of the real report is the actual test.
 
-**Not yet done, and needed before the real report deploys:** regenerate `manifest.json`
-(I-015). The file list has changed substantially — `R/` gained five files, `data/` five, plus
-`data-raw/` and `tests/`, and the report now uses `gt`, `plotly` and `htmltools`.
-
-### Specification
-
-The full data specification is **`project-brief.md` §6**. Do not re-derive it. In brief:
-~45,000 patient rows, one row per patient, three tumour streams, 2015–2024, 6 HHSs, 15
-facilities, five CSVs in a star-ish schema.
-
-### Required properties of the generator
-
-1. **Fixed seed**, so the data is reproducible and the script is itself a demo asset (D-001).
-2. **Stage must be drawn BEFORE surgery**, and surgery probability conditioned on stage. This
-   ordering is required by signal S3 (D-011).
-3. **Three planted signals**, all documented as designed artefacts:
-   - **S1** — Colorectal, one facility, prolonged LOS (IND-04): tracks the overall rate
-     2015–17, deteriorates progressively 2018–2023, corrects sharply in 2024. Must be shaped
-     so that the 2015–19 vs 2020–24 aggregation **under-calls it** — the static report shows a
-     mild deterioration, the app reveals the rise, peak and recovery. This contrast is the
-     central argument of the whole demonstration.
-   - **S2** — Lung, two HHSs of residence, materially lower surgery rate (IND-01).
-   - **S3** — Lung, same two HHSs, stage skewed later (IND-06), **sized so stage explains
-     approximately half the S2 gap**, leaving a service-access residual.
-4. **Two or three deliberately low-volume facilities**, to widen funnel-plot control limits and
-   give small-cell suppression something to act on.
-5. **Eligibility expressed as `NA`** (D-007): patients without surgery carry `NA` in
-   `facility_id`, `days_to_surgery`, `hac_flag`, `los_days`, `prolonged_los_flag` and
-   `readmit_28d_flag`.
-6. **A validation block that ASSERTS each signal landed at its intended magnitude** rather than
-   trusting the RNG. Include the crude S2 gap, the stage-adjusted S2 gap (must be roughly half
-   the crude gap), and the S1 by-year series versus its two-period aggregation.
-
-### Two questions — both ANSWERED 2026-08-19, no longer blocking
-
-**Q1 — Sex and tumour stream.** Answered: **breast is female-only**, no male cohort. Recorded
-as **D-028**.
-
-**Q2 — Surgery rate baselines by stream.** Answered: **plausible-but-invented is acceptable**
-under D-002. The specific stage distributions and stage-conditioned surgery probabilities are
-now fixed in **D-029**, and the S2/S3 sizing that sits on top of them in **D-030**. Read those
-rather than re-deriving numbers — they are the single reference for the generator, and the
-validation block asserts against them.
+**Line endings** are pinned to LF by `.gitattributes`. Without it, `core.autocrlf=true` would
+check the CSVs out as CRLF while the generator writes LF, and the reproducibility checksum
+would fail for a reason unrelated to the seed.
 
 ---
 
-## 4. Remaining schedule
+## 7. Standing design constraints
+
+**The eligibility rule drives the architecture.** Patients attach to a facility only if they
+had surgery, so IND-01 and IND-06 are cohort-wide and analysable by HHS of residence only.
+Enforced in metadata (`facility_dims_allowed`) and in `caq_calculate_indicator()`, which raises
+rather than silently dropping the non-surgical cohort from the denominator.
+
+**`NA` and `"Unknown"` are different things** (D-007, D-034). `NA` means *not eligible for this
+indicator*. `"Unknown"` means *staged, stage not known*. `stage` is never `NA`. Reaching for
+`na.rm = TRUE` to handle Unknown gives the wrong denominator — this is the likeliest future bug
+in the codebase.
+
+**Suppression order** (D-023): aggregate across all facilities first, then suppress. Tables
+withhold the count and keep the row; funnel plots keep the point and withhold the label. Never
+remove a facility before the pooled mean and control limits are computed.
+
+**`plotly` for funnel plots only** (D-014). It rewrites more than you expect: `subtitle` and
+`caption` are dropped (I-004) and legend trace names compound every discrete aesthetic
+including `group` (I-023). Check rendered output, not the RStudio plot pane.
+
+**`R/` is auto-sourced by Shiny on startup** (D-025) — definitions and constants only, no side
+effects beyond `theme_set()` in `theme.R`. `dependencies.R` stays at the root for this reason.
+
+**The report layout is settled** (D-035): `facility-report.qmd` lives at the repository root,
+not in `report/`. Moving it breaks the Connect Cloud primary-file binding.
+
+---
+
+## 8. Remaining schedule
 
 | Day | Date | Milestone |
 |---|---|---|
-| 2 | 21 Aug | Generator written and validated. Shared layer: `data_prep.R`, `metrics.R`, `suppression.R`, `theme.R`. Resolve I-009. |
-| 3 | 22 Aug | Quarto report replaces the probe content. Apply the I-016 `root.dir` mitigation. |
-| 4 | 23 Aug | Shiny app replaces the probe content. Metadata-driven stratifier menu (D-008). |
+| 4 | 20–23 Aug | **Shiny app** replaces the probe. Metadata-driven stratifier menu (D-008), S1 trend reveal (D-038), suppression visible (D-039). |
 | 5 | 24 Aug | Persona switcher (D-004), polish, **full dress rehearsal on the demo machine**. |
 
-Deploy at least once every day (I-010).
-
----
-
-## 5. Design notes worth carrying forward
-
-**The indicator eligibility rule drives the architecture.** Patients attach to a facility only
-if they had surgery. So IND-01 (surgery rate) and IND-06 (stage distribution) are cohort-wide
-and can only be analysed by **HHS of residence** — grouping them by facility is a category
-error. `indicator_definitions.csv` declares `facility_dims_allowed`, and the Shiny app must
-build its stratification menu from that table so the invalid option never renders (D-008).
-This is a governance talking point for the data-warehousing lead in the audience, not just a
-guardrail.
-
-**Suppression order** (D-023): aggregate across all facilities first, then suppress. Tabular
-output suppresses the count; funnel plots retain the point but suppress the identifying label.
-Never remove a facility before computing the pooled mean and control limits — the low-volume
-facilities are what the widening limits exist to show.
-
-**`plotly` for funnel plots only** (D-014). Everything else is static `ggplot2`. Note
-`ggplotly()` drops `subtitle` and `caption`, so funnel-plot footnotes must be separate
-`htmltools` text (I-004).
-
-**UI scope** (D-013): stock `bslib::page_sidebar()`. The earlier CAQ prototype's custom filter
-rail, overlay drawer, chip strip and 736-line stylesheet are **not** being reproduced. Its
-`theme.R` palette and `bs_theme()` block are adopted; the chrome is not. Revisit only if Day 4
-finishes early.
-
-**The `root.dir` mitigation for Day 3** (I-016) — walk up until the shared layer is visible,
-rather than assuming a fixed relative depth:
-
-```r
-# Connect Cloud renders the report from the root of a temporary repository copy,
-# while the Shiny app runs from /cloud/project — different absolute paths, same
-# tree structure (D-017, I-016). This is correct under both, and under a local
-# render from report/.
-.root <- base::normalizePath(".")
-while (!base::file.exists(base::file.path(.root, "R", "smoke_shared.R")) &&
-       base::dirname(.root) != .root) {
-  .root <- base::dirname(.root)
-}
-knitr::opts_knit$set(root.dir = .root)
-```
-
-Replace `smoke_shared.R` with whichever shared file exists by then.
-
----
-
-## 6. Applying this bundle
-
-1. Copy `CLAUDE.md` and `HANDOVER.md` to the repository root.
-2. **Overwrite** `project-brief.md`, `decision-register.md` and `issues-register.md` — the
-   copies currently in the repository predate the Day 1 findings and are stale.
-3. **Overwrite** `README.md` — the version in the repository still describes the abandoned
-   flat-root layout and the now-completed Day 1 checklist.
-4. Delete any `manifest.json` sitting in a content item's own subdirectory if present. It is
-   ignored by Connect Cloud and its presence is misleading (D-017). Note the Quarto entry
-   point lives at the repository root, not in `report/` (D-035).
-5. Commit, push, and confirm both content items still deploy — that is the I-010 daily
-   deployment for the day.
+Two days of slack exist. The most valuable use of it is **I-008 and I-010**: rehearse the
+push-to-redeploy cycle from the actual presentation machine on the actual network, and record a
+screen capture as a fallback. A rehearsal is worth more than another feature.
