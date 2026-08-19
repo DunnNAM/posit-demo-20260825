@@ -3,88 +3,123 @@
 #
 # Shared visual identity for both products.
 #
-# This is the ONLY file in R/ permitted a side effect on load: it calls
-# ggplot2::theme_set() (D-025). Everything else here is a definition.
+# Adopted from the CAQ presentation repository's src/theme.R (D-013), which is
+# the source of truth for the palette. The hex values, the `caq_colours` names,
+# the `.caq_scale_order` sequence and the base theme are taken from there
+# unchanged — so a future re-sync is a copy of two constants.
+#
+# This is the ONLY file in R/ permitted a side effect on load: ggplot2::theme_set()
+# (D-025).
 #
 # ---------------------------------------------------------------------------
-# PALETTE VALUES ARE PLACEHOLDERS — see I-022.
+# THREE DELIBERATE DEVIATIONS FROM THE UPSTREAM FILE, all documented in I-022:
 #
-# D-013 says to adopt the existing CAQ MDT prototype's theme.R verbatim, for
-# the palette, scale_colour_caq(), scale_fill_caq() and the theme_set() block.
-# That prototype is not present in this repository, so its actual hex values
-# were not available when this file was written. The colours below are a
-# neutral, colour-blind-safe stand-in chosen so the products render correctly
-# today. Replace them with the prototype's real values before the demonstration
-# — the function names and signatures are deliberately identical so that
-# substitution is a change to this one constant and nothing else.
+# 1. The upstream `base::message()` on load is dropped. Shiny auto-sources every
+#    file in R/ on every app start (D-025), so it would print on each startup
+#    for no benefit, and it is a side effect beyond the permitted theme_set().
+#
+# 2. Caption and title positioning are added to the base theme. The captions
+#    carry the synthetic-data statement (D-002) and the suppression footnotes
+#    (D-012), so they must be legible and left-aligned to the plot rather than
+#    small grey text under the axis.
+#
+# 3. The discrete scales interpolate when a variable has more levels than the
+#    palette. Upstream uses scale_colour_manual() with 7 values, which errors at
+#    render time on anything larger — and this project offers age_group_5yr
+#    (14 levels) and facility (15) as stratifiers (D-019). For 7 levels or
+#    fewer the output is identical to upstream's.
 # ---------------------------------------------------------------------------
 #
-# No showtext, no font_add_google() here (D-022). The app gets its typeface from
-# bslib at the theme level; the report uses a system sans-serif. Fetching fonts
-# at render time is a network dependency inside a build host (I-003).
+# No showtext, no font_add_google() here (D-022). The app takes its typeface
+# from bslib; the report uses a system sans-serif. Fetching fonts at render time
+# is a network dependency inside a build host (I-003).
 # =============================================================================
 
 
-#' CAQ categorical palette
+#' CAQ colour palette
 #'
-#' Ordered so the first three entries carry the three tumour streams, which is
-#' the most common colour mapping in both products.
-CAQ_PALETTE <- c(
-  "#1F5673",  # deep teal
-  "#C1666B",  # muted red
-  "#4E937A",  # green
-  "#E0A458",  # amber
-  "#6B7A8F",  # slate
-  "#8E6C88",  # plum
-  "#3C787E",  # petrol
-  "#B36A5E"   # terracotta
+#' Names and values adopted verbatim from the presentation repository.
+caq_colours <- c(
+  "blue1"            = "#5B89A6",
+  "blue2"            = "#426175",
+  "green1"           = "#56958F",
+  "dark_grey"        = "#3A3A3A",
+  "magenta"          = "#993366",
+  "yellow"           = "#F4D35E",
+  "salmon"           = "#F88379",
+  "light_background" = "#D4CFC5",
+  "dark_background"  = "#426175",
+  "neutral1"         = "#C4C7CA",
+  "neutral2"         = "#E5E0DA",
+  "neutral3"         = "#D8DADC"
 )
 
-#' Semantic colours used for indicator direction and suppression
-#'
-#' `suppressed` is deliberately a flat grey: a suppressed cell must read as
-#' absent information, never as a low or high value (D-012, D-023).
-CAQ_COLOURS <- list(
-  better     = "#4E937A",
-  worse      = "#C1666B",
-  neutral    = "#6B7A8F",
-  reference  = "#333333",
-  suppressed = "#BFBFBF"
+#' Ordered sequence for discrete scales — primary colours lead
+.caq_scale_order <- c(
+  "blue1", "magenta", "green1", "salmon", "yellow", "blue2", "dark_grey"
 )
+
+#' Semantic colours, mapped onto the palette above
+#'
+#' `suppressed` is deliberately a flat neutral: a suppressed cell must read as
+#' absent information, never as a low or high value (D-012, D-023).
+CAQ_SEMANTIC <- c(
+  better     = base::unname(caq_colours[["green1"]]),
+  worse      = base::unname(caq_colours[["magenta"]]),
+  neutral    = base::unname(caq_colours[["blue1"]]),
+  reference  = base::unname(caq_colours[["dark_grey"]]),
+  suppressed = base::unname(caq_colours[["neutral1"]])
+)
+
+
+#' Build n colours from the CAQ palette
+#'
+#' Returns the ordered palette directly when it is large enough — identical to
+#' the upstream manual scale — and interpolates across it when a variable has
+#' more levels than the palette holds.
+#'
+#' @param n Number of colours required.
+#' @param extend If FALSE, error rather than interpolate.
+#' @return Character vector of n hex colours.
+caq_pal <- function(n, extend = TRUE) {
+  base_cols <- base::unname(caq_colours[.caq_scale_order])
+  if (n <= base::length(base_cols)) {
+    return(base_cols[base::seq_len(n)])
+  }
+  if (!extend) {
+    base::stop("caq_pal(): ", n, " levels requested but the CAQ discrete palette has ",
+               base::length(base_cols),
+               ". Use a variable with fewer levels, or extend = TRUE.", call. = FALSE)
+  }
+  # Interpolating keeps a chart readable, but a 14-level categorical colour
+  # scale is hard to read whatever the colours. Prefer position over colour for
+  # high-cardinality variables such as age group.
+  grDevices::colorRampPalette(base_cols)(n)
+}
 
 
 #' Discrete colour scale using the CAQ palette
 #'
+#' @param extend Passed to caq_pal().
 #' @param ... Passed to ggplot2::discrete_scale().
 #' @return A ggplot2 scale.
-scale_colour_caq <- function(...) {
+scale_colour_caq <- function(extend = TRUE, ...) {
   ggplot2::discrete_scale(
     aesthetics = "colour",
-    palette = function(n) {
-      if (n > base::length(CAQ_PALETTE)) {
-        base::stop("scale_colour_caq(): ", n, " levels requested but the palette has ",
-                   base::length(CAQ_PALETTE), ".", call. = FALSE)
-      }
-      CAQ_PALETTE[base::seq_len(n)]
-    },
+    palette = function(n) caq_pal(n, extend = extend),
     ...
   )
 }
 
 #' Discrete fill scale using the CAQ palette
 #'
+#' @param extend Passed to caq_pal().
 #' @param ... Passed to ggplot2::discrete_scale().
 #' @return A ggplot2 scale.
-scale_fill_caq <- function(...) {
+scale_fill_caq <- function(extend = TRUE, ...) {
   ggplot2::discrete_scale(
     aesthetics = "fill",
-    palette = function(n) {
-      if (n > base::length(CAQ_PALETTE)) {
-        base::stop("scale_fill_caq(): ", n, " levels requested but the palette has ",
-                   base::length(CAQ_PALETTE), ".", call. = FALSE)
-      }
-      CAQ_PALETTE[base::seq_len(n)]
-    },
+    palette = function(n) caq_pal(n, extend = extend),
     ...
   )
 }
@@ -95,23 +130,26 @@ scale_color_caq <- scale_colour_caq
 
 #' The shared ggplot2 theme
 #'
+#' Base and colours adopted from the presentation repository; caption and title
+#' positioning added for this project's footnote requirements (deviation 2).
+#'
 #' @param base_size Base font size in points.
 #' @return A ggplot2 theme object.
 theme_caq <- function(base_size = 12) {
   ggplot2::theme_minimal(base_size = base_size) +
     ggplot2::theme(
-      plot.title      = ggplot2::element_text(face = "bold", size = base_size * 1.15),
-      plot.subtitle   = ggplot2::element_text(colour = "#555555"),
-      # Captions carry the synthetic-data statement and suppression footnotes
-      # (D-002, D-012), so they must stay legible rather than decorative.
-      plot.caption    = ggplot2::element_text(colour = "#555555", hjust = 0,
-                                              size = base_size * 0.8),
+      text            = ggplot2::element_text(colour = caq_colours[["dark_grey"]]),
+      plot.title      = ggplot2::element_text(colour = caq_colours[["blue2"]], face = "bold"),
+      plot.subtitle   = ggplot2::element_text(colour = caq_colours[["blue1"]]),
+      axis.title      = ggplot2::element_text(colour = caq_colours[["blue2"]]),
+      legend.position = "bottom",
+
+      # Added for this project: the synthetic-data statement (D-002) and the
+      # suppression footnotes (D-012) live in the caption and must be readable.
+      plot.caption          = ggplot2::element_text(colour = caq_colours[["dark_grey"]],
+                                                    hjust = 0, size = base_size * 0.8),
       plot.caption.position = "plot",
-      plot.title.position   = "plot",
-      panel.grid.minor = ggplot2::element_blank(),
-      panel.grid.major.x = ggplot2::element_blank(),
-      strip.text      = ggplot2::element_text(face = "bold"),
-      legend.position = "bottom"
+      plot.title.position   = "plot"
     )
 }
 

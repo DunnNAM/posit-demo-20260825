@@ -63,7 +63,6 @@ needs no pruning.
 | I-019 | Medium | CSV drops factor ordering — `data_prep.R` must set explicit levels |
 | I-020 | Medium | Data generated under R 4.5.2 / user library, not the lockfile environment — re-run on the laptop |
 | I-021 | Low | Stage-adjusted S2 gap is a noisy estimator; tolerance widened, no action |
-| I-022 | Medium | `R/theme.R` palette is a placeholder — replace with the prototype's real values |
 
 ---
 
@@ -93,9 +92,10 @@ Rscript --vanilla tests/verify_shared_layer.R
 Entry points: `caq_load_data()`, `caq_calculate_indicator()`, `caq_valid_stratifiers()`,
 `caq_suppress()`, `caq_suppression_caption()`, `caq_stratifiers()`.
 
-**The next task is the Day 3 Quarto report.** Two things to settle first: whether
-`facility-report.qmd` moves to `report/` (see below), and **I-022** — the palette in
-`R/theme.R` is a placeholder, not CAQ's.
+**The next task is the Day 3 Quarto report.** One thing to settle first: whether
+`facility-report.qmd` moves to `report/` (see below). The palette is done — `R/theme.R` now
+carries CAQ's real colours, adopted from `src/theme.R` in the private
+`DunnNAM/posit-presentation` repository (I-022, closed).
 
 ### Specification
 

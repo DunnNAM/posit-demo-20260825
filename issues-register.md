@@ -405,28 +405,34 @@ the parameter to one seed's noise.
 and D-030 records the achieved figures. **If the seed changes, expect the ratio to move by
 several hundredths and do not treat that as a defect.**
 
-### I-022 — `R/theme.R` palette values are placeholders, not the CAQ palette
-**Severity:** Medium · **Status:** Open · **Owner:** Nathan · **Due:** before Day 5 ·
-**Raised:** 2026-08-19
+### I-022 — `R/theme.R` palette values were placeholders
+**Severity:** Medium · **Status:** **CLOSED 2026-08-19** · **Raised and closed same day**
 
-D-013 says to adopt the existing MDT prototype's `theme.R` **verbatim** — CAQ palette,
-`scale_colour_caq()`, `scale_fill_caq()` and the `theme_set()` block. That prototype is not in
-this repository and was not available when the shared layer was written, so the hex values
-currently in `R/theme.R` are a neutral, colour-blind-safe stand-in, not CAQ's colours.
+The shared layer was first written with a neutral stand-in palette, because D-013 says to
+adopt CAQ's `theme.R` verbatim and no copy of it was in this repository.
 
-The function names, signatures and structure are deliberately identical to what D-013
-describes, so substitution is a change to the `CAQ_PALETTE` and `CAQ_COLOURS` constants and
-nothing else. No calling code needs to change.
+**Resolved.** The real file was located at `src/theme.R` in the private
+`DunnNAM/posit-presentation` repository and its palette adopted: the `caq_colours` names and
+hex values, the `.caq_scale_order` sequence, and the base theme are now taken from there
+unchanged. Verified that `caq_pal(7)` returns exactly the upstream ordered sequence.
 
-**Why it matters beyond aesthetics.** Presenting a demonstration to CAQ management in colours
-that are not CAQ's, while the register claims the palette was adopted from their own
-prototype, is a small but avoidable credibility gap in front of an audience that includes the
-Senior Director.
+**Checked before copying (I-005):** the upstream file contains colour definitions and
+`ggplot2` code only — no database, server, schema or connection details. Nothing else was
+copied from that repository.
 
-**Action:** copy the real palette out of the prototype's `theme.R` on the work laptop and
-replace the two constants. **Copy the colour values only** — the prototype's `global.R`
-contains real database and table names and none of it may cross into this public repository
-(I-005).
+**Three deliberate deviations, recorded in `R/theme.R`'s header so a future re-sync sees them:**
+
+1. The upstream `base::message()` on load is dropped. Shiny auto-sources every file in `R/` on
+   every app start (D-025), so it would print on each startup, and it is a side effect beyond
+   the single permitted `theme_set()`.
+2. Caption and title positioning added. Captions carry the synthetic-data statement (D-002)
+   and suppression footnotes (D-012) and must be legible and plot-aligned.
+3. **The discrete scales interpolate above 7 levels.** Upstream uses
+   `scale_colour_manual()` with 7 values, which fails *at render time* on anything larger —
+   and this project offers `age_group_5yr` (14 levels) and facility (15) as stratifiers
+   (D-019). For 7 levels or fewer the output is identical to upstream's. Note that a 14-level
+   categorical colour scale is hard to read whatever the colours; prefer position over colour
+   for high-cardinality variables.
 
 ---
 
