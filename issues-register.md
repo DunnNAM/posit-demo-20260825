@@ -362,9 +362,15 @@ incidental sort order.
 ### I-020 — Home machine cannot reproduce the lockfile environment
 **Severity:** Medium · **Status:** Open · **Owner:** Nathan · **Raised:** 2026-08-19
 
-`renv.lock` pins R 4.5.3. The home machine (see I-018) has 4.5.1, 4.5.2, 4.4.2 and 4.3.3 but
+`renv.lock` pins R 4.5.3. The home machine (see I-018) has 4.3.1, 4.3.3, 4.4.2 and 4.5.2 but
 not 4.5.3, and this clone has never had `renv::restore()` run against it — there is no project
 library here at all.
+
+**The patch-level difference is the lesser half of this issue.** R package binaries on Windows
+are built per *minor* version: 4.5.2 and 4.5.3 both resolve to the `4.5` binary path, so
+`renv::restore()` under 4.5.2 installs exactly the versions `renv.lock` pins. renv will warn
+about the R version and proceed. The material gap is that no project library exists here at
+all, not the third digit.
 
 The generator was therefore developed and run under R 4.5.2 against the **user** library, with
 `readr`, `tidyr`, `purrr` and `forcats` installed there to make it runnable. Nothing was
