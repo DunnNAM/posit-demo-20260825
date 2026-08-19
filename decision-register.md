@@ -280,6 +280,37 @@ residence" (D-019), and the concentration of outflow in H5/H6 is coherent with t
 service-access story S2 tells about those same two HHSs. The validation block asserts the
 statewide flow stays between 20% and 40%.
 
+### D-034 — Stage "Unknown" is an explicit category, included in every denominator
+**Status:** Agreed · **Date:** 2026-08-19 · **Resolves:** I-009
+
+"Unknown" is a stage value like any other. It appears as a category in IND-06, as a group when
+stage is used as a stratifier for any other indicator, and it is counted in every denominator
+and every calculation. It is never dropped, never silently excluded, and never folded into
+another level.
+
+Realised proportions: Breast 3.4%, Colorectal 5.4%, Lung 5.1% (5.5% in H5+H6 against 5.0% in
+the rest of the state).
+
+**Rationale.** IND-06 is a *distribution*. Removing a category from a distribution and still
+presenting it as summing to 100% is the most misleading option available, and a stacked bar
+reads as complete by definition to the two clinical leads in the audience. Keeping Unknown in
+also means the S3 stage standardisation behind D-030 stays exactly as validated — excluding it
+would change the achieved adjusted-gap ratio and require D-030 to be re-derived.
+
+**Note on `NA` vs "Unknown" — these are different things and must not be conflated.** Under
+D-007, `NA` means *not eligible for this indicator*. "Unknown" means *this patient was
+diagnosed and staged, and the stage is not known*. `stage` is therefore never `NA` in
+`patients.csv`; it always carries one of five values. Code must not treat "Unknown" with
+`na.rm`, and must not coerce it to `NA` on read (I-019).
+
+**Consequences:**
+1. Implemented once in `R/metrics.R`. Neither product applies its own stage filter (D-010, I-011).
+2. Stratifying IND-05 by stage at a low-volume facility will produce Unknown cells below the
+   D-012 threshold and trigger suppression. This is accepted, and is a second natural
+   demonstration of suppression alongside the low-volume facilities.
+3. The stage completeness figure is still worth stating in the report as context — but as
+   additional information, not as a reason to alter any denominator.
+
 ---
 
 ## Technical and environment

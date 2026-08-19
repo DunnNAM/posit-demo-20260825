@@ -55,7 +55,6 @@ needs no pruning.
 |---|---|---|
 | I-005 | High (at first push) | Public repo — no real DB/schema names anywhere, including comments |
 | I-008 | High | Live demo depends on network, GitHub and Connect Cloud from the presentation room |
-| I-009 | Medium | Stage "Unknown" handling undefined — decide in the Day 2 metrics layer and record it |
 | I-010 | High | Deploy something every day; the repo should never go 24h without a successful deployment |
 | I-015 | Medium | `manifest.json` must be regenerated whenever files or packages change |
 | I-016 | Medium | Divergent working directories — apply the `root.dir` mitigation in the Day 3 report |
@@ -82,9 +81,9 @@ Achieved signal magnitudes, for narration:
 | **S3** | Stage IV in lung: 44.7% rest of state vs **53.3%** in H5+H6. Explains 44% of the S2 gap; 5.7pp of access residual remains. |
 
 **The next task is the shared `R/` layer** — `data_prep.R`, `metrics.R`, `suppression.R`,
-`theme.R`. Two things must be settled as part of it: **I-009** (stage "Unknown" handling —
-still open, and the data now carries Unknown at 3.4–5.4% per stream) and **I-019** (factor
-levels must be set explicitly on read).
+`theme.R`. It is no longer blocked: **I-009 is closed** by D-034 (stage "Unknown" is an
+explicit category, counted in every denominator). Carry **I-019** into `data_prep.R` — factor
+levels must be set explicitly on read, because CSV does not preserve them.
 
 ### Specification
 

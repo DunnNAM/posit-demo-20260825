@@ -292,7 +292,9 @@ before aggregation.
 *label*, retaining the point. Confirm this is acceptable under CAQ convention.
 
 ### I-009 — Stage "Unknown" handling is undefined
-**Severity:** Medium · **Status:** Open · **Due:** Day 2
+**Severity:** Medium · **Status:** **CLOSED 2026-08-19** — resolved by D-034: Unknown is an
+explicit category, included in every denominator and calculation, never silently dropped.
+Note that `stage` is never `NA` — `NA` means ineligible (D-007), "Unknown" means unstaged.
 
 Stage carries an "Unknown" level (IND-06). It is not yet decided whether Unknown is shown as
 a category, excluded from the denominator, or reported separately as a completeness measure.
@@ -463,3 +465,7 @@ packages are declared with explicit `library()` calls. Verification remains as I
 ### I-007 — Suppression and funnel plots interact awkwardly
 **Closed:** 2026-08-19 · **Resolution:** D-023 — aggregate first, retain the point, suppress
 the label.
+
+### I-009 — Stage "Unknown" handling is undefined
+**Closed:** 2026-08-19 · **Resolution:** D-034 — Unknown is an explicit category, counted in
+every denominator and every calculation, and shown as a category wherever stage appears.
