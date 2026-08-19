@@ -146,6 +146,77 @@ with fewer than *x* cases" control, defaulting to 5.
 presence. Kept deliberately light — one or two visible examples is sufficient.
 **Consequence:** Implemented once in `R/suppression.R`, not per chart.
 
+### D-028 — Breast tumour stream is female-only
+**Status:** Agreed · **Date:** 2026-08-19 · **Answers:** HANDOVER §3 Q1
+
+No male breast cohort is generated. Breast cases are drawn as female only; sex remains a
+stratifier across the whole dataset, with Lung and Colorectal carrying both sexes.
+
+**Rationale:** male breast cancer is real but rare (~1% of cases). Including it would produce
+cells of one or two patients at a single facility in a single year — which exercises
+suppression, but also lets a viewer filter to "male breast, one facility" and reach a stratum
+too small to read. In a live demonstration to two clinical leads, an unreadable stratum invites
+a question about the data rather than the platform.
+**Consequence:** small-cell suppression must be exercised deliberately by the low-volume
+facilities instead (D-012, and the low-volume facilities in §6 of the brief), not incidentally
+by a rare cohort. Any chart faceting Breast by sex will show a single level — the app's
+stratifier menu should not special-case this; a one-level facet is honest output.
+
+### D-029 — Surgery-rate baselines are invented, and stated as such
+**Status:** Agreed · **Date:** 2026-08-19 · **Answers:** HANDOVER §3 Q2
+
+Baselines are plausible-but-invented under D-002, not sourced from any real series. They are
+recorded here so the generator and the demonstration cannot drift from a fixed reference.
+
+**Stage distribution by stream (all-diagnosed cohort):**
+
+| Stream | I | II | III | IV | Unknown |
+|---|---|---|---|---|---|
+| Breast | 40% | 35% | 15% | 7% | 3% |
+| Colorectal | 20% | 25% | 30% | 20% | 5% |
+| Lung | 15% | 10% | 25% | 45% | 5% |
+
+**Surgery probability conditioned on stage** (drawn after stage — required by D-011/S3):
+
+| Stream | I | II | III | IV | Unknown | Implied overall |
+|---|---|---|---|---|---|---|
+| Breast | 95% | 92% | 80% | 30% | 50% | ~86% |
+| Colorectal | 90% | 88% | 80% | 35% | 40% | ~73% |
+| Lung | 65% | 50% | 18% | 3% | 10% | ~21% |
+
+**Rationale:** the shape matters more than the values. Breast and colorectal resect the large
+majority of early-stage disease; lung is materially lower because most cases present too
+advanced for resection. A lung rate anywhere near colorectal's is the one error this audience
+would notice immediately.
+**Consequence:** these are the only surgery-rate parameters in the project. The generator reads
+them from a single named constant, and the report and app never restate them.
+
+### D-030 — S2/S3 sizing: stage skew plus an access multiplier of 0.80
+**Status:** Agreed · **Date:** 2026-08-19 · **Implements:** D-011 (S2, S3)
+
+In the two nominated HHSs of residence, **Lung only**:
+
+1. **S3 — stage skewed later.** Stage distribution becomes I 9%, II 7%, III 26%, IV 53%,
+   Unknown 5%, against the D-029 lung baseline. Acting alone this drops the surgery rate from
+   ~21.1% to ~16.1%.
+2. **S2 — access residual.** Stage-conditioned surgery probability is then multiplied by
+   **0.80**, giving an observed rate of ~12.9%.
+
+**Resulting magnitudes, which the validation block must assert:**
+
+| Quantity | Target |
+|---|---|
+| Crude S2 gap | ~8.2 percentage points |
+| Stage-adjusted S2 gap (access residual) | ~4.2 percentage points |
+| Adjusted ÷ crude | 0.4 – 0.6 |
+
+**Rationale:** D-011 requires stage to explain approximately half the S2 gap, leaving a
+service-access residual. Stage skew and the multiplier interact, so the multiplier cannot be
+read off the target ratio directly — 0.80 was chosen because it lands the ratio at ~0.51.
+**Consequence:** the assertion is on the **ratio**, not on either gap alone. If the stage
+distribution in D-029 is ever retuned, the multiplier must be re-solved to hold the ratio, and
+this decision amended.
+
 ---
 
 ## Technical and environment

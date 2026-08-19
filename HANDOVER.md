@@ -99,21 +99,16 @@ facilities, five CSVs in a star-ish schema.
    trusting the RNG. Include the crude S2 gap, the stage-adjusted S2 gap (must be roughly half
    the crude gap), and the S1 by-year series versus its two-period aggregation.
 
-### Two questions must be answered before writing it
+### Two questions — both ANSWERED 2026-08-19, no longer blocking
 
-These were put to the user at the end of the Day 1 session and are **unanswered**. Ask again
-before generating; do not assume.
+**Q1 — Sex and tumour stream.** Answered: **breast is female-only**, no male cohort. Recorded
+as **D-028**.
 
-**Q1 — Sex and tumour stream.** Male breast cancer is real but rare (~1% of cases). Include a
-small male breast cohort for realism, or restrict breast to females? Including it produces
-tiny cells that exercise suppression naturally, but also produces confusing strata if someone
-filters to male breast at a single facility.
-
-**Q2 — Surgery rate baselines by stream.** Plausible baselines are needed per tumour stream —
-roughly 70–80% for colorectal and breast, materially lower for lung, since most lung cancers
-present too advanced for resection. Does the user want to nominate these, or is
-plausible-but-invented acceptable under D-002? Two clinical leads are in the audience; a
-wildly wrong baseline risks starting an argument about the data instead of the platform.
+**Q2 — Surgery rate baselines by stream.** Answered: **plausible-but-invented is acceptable**
+under D-002. The specific stage distributions and stage-conditioned surgery probabilities are
+now fixed in **D-029**, and the S2/S3 sizing that sits on top of them in **D-030**. Read those
+rather than re-deriving numbers — they are the single reference for the generator, and the
+validation block asserts against them.
 
 ---
 
