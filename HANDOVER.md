@@ -63,6 +63,7 @@ needs no pruning.
 | I-019 | Medium | CSV drops factor ordering — `data_prep.R` must set explicit levels |
 | I-020 | Medium | Data generated under R 4.5.2 / user library, not the lockfile environment — re-run on the laptop |
 | I-021 | Low | Stage-adjusted S2 gap is a noisy estimator; tolerance widened, no action |
+| I-022 | Medium | `R/theme.R` palette is a placeholder — replace with the prototype's real values |
 
 ---
 
@@ -80,10 +81,21 @@ Achieved signal magnitudes, for narration:
 | **S2** | Lung surgery rate 22.2% rest of state vs **12.1%** in H5+H6 — a 10.1pp crude gap. |
 | **S3** | Stage IV in lung: 44.7% rest of state vs **53.3%** in H5+H6. Explains 44% of the S2 gap; 5.7pp of access residual remains. |
 
-**The next task is the shared `R/` layer** — `data_prep.R`, `metrics.R`, `suppression.R`,
-`theme.R`. It is no longer blocked: **I-009 is closed** by D-034 (stage "Unknown" is an
-explicit category, counted in every denominator). Carry **I-019** into `data_prep.R` — factor
-levels must be set explicitly on read, because CSV does not preserve them.
+**DONE 2026-08-19 — the shared `R/` layer is written and verified.**
+`R/data_prep.R`, `R/metrics.R`, `R/suppression.R`, `R/theme.R`, with
+`tests/verify_shared_layer.R` checking the layer against direct calculations on the raw CSV
+(I-011). All checks pass; run it with:
+
+```
+Rscript --vanilla tests/verify_shared_layer.R
+```
+
+Entry points: `caq_load_data()`, `caq_calculate_indicator()`, `caq_valid_stratifiers()`,
+`caq_suppress()`, `caq_suppression_caption()`, `caq_stratifiers()`.
+
+**The next task is the Day 3 Quarto report.** Two things to settle first: whether
+`facility-report.qmd` moves to `report/` (see below), and **I-022** — the palette in
+`R/theme.R` is a placeholder, not CAQ's.
 
 ### Specification
 

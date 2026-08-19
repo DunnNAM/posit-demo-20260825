@@ -405,6 +405,29 @@ the parameter to one seed's noise.
 and D-030 records the achieved figures. **If the seed changes, expect the ratio to move by
 several hundredths and do not treat that as a defect.**
 
+### I-022 — `R/theme.R` palette values are placeholders, not the CAQ palette
+**Severity:** Medium · **Status:** Open · **Owner:** Nathan · **Due:** before Day 5 ·
+**Raised:** 2026-08-19
+
+D-013 says to adopt the existing MDT prototype's `theme.R` **verbatim** — CAQ palette,
+`scale_colour_caq()`, `scale_fill_caq()` and the `theme_set()` block. That prototype is not in
+this repository and was not available when the shared layer was written, so the hex values
+currently in `R/theme.R` are a neutral, colour-blind-safe stand-in, not CAQ's colours.
+
+The function names, signatures and structure are deliberately identical to what D-013
+describes, so substitution is a change to the `CAQ_PALETTE` and `CAQ_COLOURS` constants and
+nothing else. No calling code needs to change.
+
+**Why it matters beyond aesthetics.** Presenting a demonstration to CAQ management in colours
+that are not CAQ's, while the register claims the palette was adopted from their own
+prototype, is a small but avoidable credibility gap in front of an audience that includes the
+Senior Director.
+
+**Action:** copy the real palette out of the prototype's `theme.R` on the work laptop and
+replace the two constants. **Copy the colour values only** — the prototype's `global.R`
+contains real database and table names and none of it may cross into this public repository
+(I-005).
+
 ---
 
 ## Low
