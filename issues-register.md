@@ -97,6 +97,65 @@ than 24 hours without a successful Connect Cloud deployment.
 
 ## Medium
 
+### I-012 — `renv::init()` discovered 8,498 files; dependency scan scope is wrong
+**Severity:** Medium · **Status:** Closed 2026-08-19 · **Owner:** Nathan
+
+`renv::init()` warned that 8,498 files were found for dependency scanning, against a project
+containing seven. Cause was candidate 1: the RStudio project was open one directory level
+above the repository, so `renv` was scanning `D:/Development` and all sibling projects.
+
+**Resolution:** deleted the generated `renv/` directory (no `renv.lock` had been written),
+corrected the working directory to the repository root, re-ran `renv::init()` successfully.
+
+**Correction to the original verification method:** counting packages in `renv.lock` is not a
+valid pollution test. `renv.lock` records the full transitive closure, so a declared set of
+~18 packages including `shiny`, `plotly`, `gt`, `reactable` and `rmarkdown` legitimately
+produces 120–160 lockfile entries. The correct test is `unique(renv::dependencies()$Source)`
+— every scanned file must resolve inside the repository.
+
+**Recurrence prevention:** an `.Rproj` file at the repository root, always used to open the
+project. `renv::init()` writes the activating `.Rprofile` to the repository root, so opening
+RStudio at any other level leaves renv inactive and the session silently running against the
+system library. Fixing the working directory with `setwd()` is session-scoped and does not
+prevent recurrence.
+
+### I-013 — Declaration-only file was executed by Shiny's `R/` auto-sourcing
+**Severity:** Medium · **Status:** Closed 2026-08-19 · **Owner:** Nathan · **Raised:** Day 1
+
+`R/dependencies.R` carried a header stating it was never sourced or run. Shiny auto-sources
+every `.R` file in an `R/` directory next to `app.R`, so it was in fact executed on every app
+start, attaching all 18 declared packages regardless of use.
+
+**Detected by:** `lubridate` and `plotly` appearing in the local startup log, despite `app.R`
+calling `library()` for neither.
+
+**Impact:** low functionally — the packages are in the lockfile and attach cleanly, and D-016
+namespacing means the extra masking cannot change behaviour. The real defect was
+documentation: a file whose header contradicted its actual behaviour, in a project whose
+comments are a stated deliverable for staff transferability.
+
+**Resolution:** D-025. Declaration file moved to the repository root as `dependencies.R`;
+header corrected to explain why its location matters. `renv` detection is unaffected.
+
+**Carried forward:** everything placed in `R/` from Day 2 must be safe to source on app
+startup — definitions and constants only.
+
+### I-014 — Skeleton files delivered to the wrong paths
+**Severity:** Medium · **Status:** Closed 2026-08-19 · **Raised:** Day 1
+
+Two files from the Day 1 skeleton were placed at the repository root rather than in their
+intended subdirectories: `smoke_shared.R` (belongs in `R/`) and `smoke_data.csv` (belongs in
+`data/`). Both were referenced by relative path from `app.R` and `facility-report.qmd` and
+would have failed on deployment.
+
+**Detected by:** `renv::dependencies()` source listing, then a runtime error on local app run.
+
+**Resolution:** files moved with `file.rename()`; no code change required.
+
+**Lesson recorded:** the local run caught both at zero cost. Continue running both products
+locally before every push — a Connect Cloud build log is a far more expensive place to find a
+missing file.
+
 ### I-004 — `ggplotly()` drops `subtitle` and `caption`
 **Severity:** Medium · **Status:** Mitigated by D-014 · **Date raised:** 2026-08-19
 
@@ -156,6 +215,21 @@ clearly generic), that no table/column names mirror the real warehouse, and that
 connection strings, DSNs or server names appear anywhere — including in comments. Note that
 the existing prototype's `global.R` contains real database and table names; **none of it
 should be copied across**.
+
+**Added 2026-08-19 (arising from I-012) — verify the git repository root before pushing.**
+The demo repository sits inside `D:/Development`, alongside other projects including the MDT
+prototype whose `global.R` contains real database names, table names and a DSN. If `git init`
+was run from `D:/Development` rather than the demo folder, a push to a public GitHub
+repository would publish all of it.
+
+Confirm in the terminal before the first push:
+
+```
+git rev-parse --show-toplevel
+```
+
+This must return the demo repository path, not `D:/Development`. Treat this as a hard gate on
+the first push — severity for this specific check is **High**, not Low.
 
 ### I-011 — Report and app could diverge on indicator values
 **Severity:** Low · **Status:** Mitigated by D-010, D-020 · **Date raised:** 2026-08-19

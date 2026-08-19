@@ -233,6 +233,26 @@ Keeping the filenames stable means Day 1's deployment configuration is never thr
 every subsequent push updates an already-working content item, and the push-to-redeploy
 demonstration runs against something that has been deploying successfully all week.
 
+### D-025 — `R/` is auto-sourced by Shiny; the dependency declaration lives at the root
+**Status:** Agreed · **Date:** 2026-08-19 · **Arises from:** I-013
+
+Shiny automatically sources every `.R` file in an `R/` directory adjacent to `app.R`.
+Consequences adopted as project conventions:
+
+1. **`dependencies.R` sits at the repository root, not in `R/`.** It is a declaration file
+   that must never execute. `renv` scans all `.R` files in the project regardless of
+   location, so detection is unaffected.
+2. **Every file in `R/` must be safe to source on app startup** — function definitions and
+   constants only, no side effects beyond `ggplot2::theme_set()` in `theme.R`.
+3. **Shiny modules go in `R/` and need no manual source list.** This removes the
+   hand-maintained `source()` block that the earlier MDT prototype carries at the foot of its
+   `global.R`, and with it the risk of a module being added but not sourced.
+4. **The Quarto report does not get this behaviour** and retains an explicit
+   `source("R/...")` call in its setup chunk.
+
+**Rationale:** discovered empirically on Day 1 — `lubridate` and `plotly` attached during a
+local app run despite `app.R` not calling `library()` for either.
+
 ---
 
 ## Pending sign-off
