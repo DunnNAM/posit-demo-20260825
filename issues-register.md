@@ -362,7 +362,8 @@ immediately after reading, and does so once for both products (D-010). Do not re
 incidental sort order.
 
 ### I-020 — Home machine cannot reproduce the lockfile environment
-**Severity:** Medium · **Status:** Open · **Owner:** Nathan · **Raised:** 2026-08-19
+**Severity:** Medium · **Status:** **Largely resolved 2026-08-19** — see the resolution note
+at the end of this entry · **Owner:** Nathan · **Raised:** 2026-08-19
 
 `renv.lock` pins R 4.5.3. The home machine (see I-018) has 4.3.1, 4.3.3, 4.4.2 and 4.5.2 but
 not 4.5.3, and this clone has never had `renv::restore()` run against it — there is no project
@@ -387,6 +388,26 @@ ordinary data manipulation, with a fixed seed (D-001). Nothing in it is version-
 demonstration and confirm the CSVs are byte-identical. If they are not, the R version becomes
 part of the reproducibility story and must be narrated accordingly — the claim on screen is
 that a seeded script reproduces the data exactly (D-001, brief §1).
+
+---
+
+**RESOLUTION 2026-08-19.** The project library now exists on the home machine: restored from
+Posit Package Manager dated snapshots (D-037), 94 packages as binaries, `renv::status()`
+synchronised. The generator was then re-run under that restored environment and the CSVs are
+**byte-identical** to those produced under the ad-hoc user library — verified by checksum
+across all five files. `tests/verify_shared_layer.R` also passes under it.
+
+D-001's reproducibility claim therefore holds across two different package environments on this
+machine, which is stronger evidence than a single environment reproducing itself.
+
+**What remains, and it is small.** The restored binaries were built for R 4.5.3 while this
+machine runs 4.5.2 — R warns "package was built under R version 4.5.3" on attach. Within one
+minor version this is expected and harmless. The laptop check is still worth doing once, but it
+is now a confirmation rather than an open question.
+
+**Do not re-diagnose the original failure.** It was a missing Rtools45 for source builds of
+pinned versions, not the environment. D-037 lists the four hypotheses that were tested and
+eliminated, including OneDrive — moving the repository would not have helped.
 
 ### I-021 — The stage-adjusted S2 gap is a noisy estimator
 **Severity:** Low · **Status:** Open — tolerance widened, no action required ·

@@ -61,7 +61,7 @@ needs no pruning.
 | I-017 | Low (presentation) | Free-tier content is public; state this explicitly during the demo |
 | I-018 | Medium | Two working copies (home, work laptop) — pull `--ff-only` on arrival, push before leaving |
 | I-019 | Medium | CSV drops factor ordering — `data_prep.R` must set explicit levels |
-| I-020 | Medium | Data generated under R 4.5.2 / user library, not the lockfile environment — re-run on the laptop |
+| I-020 | Low | Largely resolved — library restored via P3M snapshots (D-037); CSVs byte-identical. Laptop check is now confirmation only |
 | I-021 | Low | Stage-adjusted S2 gap is a noisy estimator; tolerance widened, no action |
 
 ---

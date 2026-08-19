@@ -535,6 +535,50 @@ the rendered one — which would undercut the push-to-redeploy narrative.
 **Consequence:** no effect on either deployment binding. Local renders will recreate the
 directory; it stays untracked.
 
+### D-037 — Local `renv::restore()` runs from Posit Package Manager dated snapshots
+**Status:** Agreed · **Date:** 2026-08-19 · **Resolves:** the I-020 restore failure
+
+On a machine without the matching Rtools, restore the project library from **dated P3M
+snapshots** rather than from CRAN:
+
+```r
+options(renv.config.repos.override = c(
+  P3M_MAY = "https://packagemanager.posit.co/cran/2026-05-01",
+  P3M_APR = "https://packagemanager.posit.co/cran/2026-04-15"
+))
+renv::restore(prompt = FALSE)
+```
+
+Result on the home machine: 94 packages, all installed as **binaries**, zero failures, in about
+eleven seconds. `renv::status()` reports the project synchronised.
+
+**The problem this solves.** CRAN serves Windows binaries only for the *current* version of
+each package. `renv.lock` pins older versions, so those fall back to building from source —
+and source builds of compiled packages need Rtools matching the R minor version. The home
+machine has only Rtools43, against R 4.5.2 which needs Rtools45, and the account is not a local
+administrator so Rtools45 cannot be installed to its usual location. Eight packages with
+compiled code failed (`Rcpp`, `bit64`, `bitops`, `clipr`, `curl`, `stringi`, `xfun`, `xml2`)
+and 29 more cascaded from them. The 145 that succeeded were pure R, which builds from source
+without a compiler.
+
+**Why two snapshot dates.** No single snapshot holds every pinned version: 2026-05-01 matches
+seven of the eight, and `curl 7.0.0` is only current at 2026-04-15. renv resolves each pinned
+version against whichever configured repository holds it, so listing both covers the set.
+
+**Ruled out first, recorded so nobody repeats them.** The failure log showed
+`'CreateProcess' failed to run robocopy.exe` and `worker failed to start`, which points
+misleadingly at the environment rather than at the toolchain. Tested and eliminated:
+OneDrive file locking (robocopy into `renv/staging` inside OneDrive succeeds); blocked process
+spawning (child `Rscript` processes start fine); Windows MAX_PATH (`LongPathsEnabled = 0x1`,
+330-character destinations copy fine); and install concurrency (a single-job restore failed
+identically). **Moving the repository out of OneDrive would not have fixed this.**
+
+**Consequence — and it is a demonstration asset, not just a fix.** This is a concrete, lived
+example of the Package Manager capability that is one of the audience's stated hooks: a machine
+with the wrong toolchain provisioning a pinned environment entirely from binaries, because
+Package Manager keeps dated snapshots where CRAN keeps only the present. Worth narrating if the
+question of governed internal repositories comes up.
+
 ---
 
 ## Pending sign-off
