@@ -1,0 +1,18 @@
+# Line endings are pinned to LF in the WORKING TREE, not just in the index.
+#
+# Why this matters here specifically (I-020): core.autocrlf is true on at least
+# one of the two machines this repository is cloned on (I-018). Without this
+# file, `git pull` checks the committed CSVs out as CRLF, while re-running
+# data-raw/generate_synthetic_data.R writes them as LF. The checksums then
+# differ for a reason that has nothing to do with the seed — and "a seeded
+# script reproduces this data exactly" is a claim made on screen during the
+# demonstration (D-001).
+#
+# LF also matches Connect Cloud's Linux build host, so the deployed bytes are
+# the bytes that were tested locally.
+* text=auto eol=lf
+
+# Committed Quarto render output — leave untouched.
+*.png binary
+*.woff binary
+*.woff2 binary

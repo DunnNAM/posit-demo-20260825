@@ -23,6 +23,14 @@ library(dplyr)
 library(tibble)
 library(readr)
 
+# Every path below is relative to the repository root, never absolute (I-016).
+# Fail immediately and legibly if the script is run from anywhere else, rather
+# than writing data/ into whatever directory happened to be current.
+if (!dir.exists("data-raw") || !file.exists("dependencies.R")) {
+  stop("Run this script from the repository root: Rscript --vanilla data-raw/generate_synthetic_data.R",
+       call. = FALSE)
+}
+
 # Fixed seed so the dataset is reproducible and the script is itself a demo
 # asset (D-001). Changing this invalidates every figure quoted in the report.
 set.seed(20260824)
