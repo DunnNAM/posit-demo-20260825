@@ -579,6 +579,52 @@ with the wrong toolchain provisioning a pinned environment entirely from binarie
 Package Manager keeps dated snapshots where CRAN keeps only the present. Worth narrating if the
 question of governed internal repositories comes up.
 
+### D-038 — The report deliberately withholds the year-by-year series
+**Status:** Agreed · **Date:** 2026-08-19 · **Implements:** D-011 (S1)
+
+`facility-report.qmd` presents the S1 facility as two five-year periods only: 13.3% then
+20.1%. It does **not** plot the annual series, does not mention the 2023 peak of 28.4%, and
+does not mention the correction to 9.8% in 2024. `caq_plot_trend()` exists in `R/plots.R` and
+is deliberately never called by the report.
+
+**Rationale.** This is the demonstration's central contrast. The static report can show that
+the facility deteriorated; it cannot show when it started, whether it is still happening, or
+that it has already been fixed. If the report plots the trend, the argument for the dashboard
+evaporates. The temptation to include it is real — it is the most interesting thing in the
+dataset — so it is recorded as a decision rather than left to judgement.
+
+**Verified, not assumed.** `tests/` aside, the rendered HTML was searched for the peak and
+recovery values: `28.4` has zero occurrences in the file, and the underlying proportions
+(`0.2835`, `0.2625`) are absent from the embedded plot data. The report's prose says plainly
+that a five-year average cannot distinguish a steady decline from a resolved spike, which sets
+up the app without giving the answer away.
+
+### D-039 — The report states that suppression did not fire, rather than implying it did
+**Status:** Agreed · **Date:** 2026-08-19 · **Arises from:** first render
+
+At every aggregation the report uses, the smallest cell is far above the D-012 threshold of
+five:
+
+| Aggregation | Smallest cell | Cells below 5 |
+|---|---|---|
+| IND-04 by facility × period | 192 | 0 |
+| IND-03 by facility (funnel) | 401 | 0 |
+| IND-04 by facility × stream × period | 13 | 0 |
+| *(the app)* facility × year × stream | 1 | **21** |
+
+The first draft described the suppression rule and its two behaviours as though they had been
+applied. They had not, and could not have been.
+
+**Resolution:** the report states the rule, then states — computed at render time, not
+hardcoded — that no cell in this document falls below it, gives the smallest group presented,
+and notes that the dashboard's year-level views do reach the threshold and do suppress.
+
+**Rationale.** D-012 exists because CAQ staff will look for suppression and its absence is more
+noticeable than its presence. A report that describes a disclosure control it never applied is
+worse than one that says nothing: it invites the reader to assume cells were withheld silently.
+The honest framing is also a better point — at these aggregations the aggregation *is* the
+disclosure control.
+
 ---
 
 ## Pending sign-off

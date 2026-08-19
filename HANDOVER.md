@@ -63,6 +63,8 @@ needs no pruning.
 | I-019 | Medium | CSV drops factor ordering — `data_prep.R` must set explicit levels |
 | I-020 | Low | Largely resolved — library restored via P3M snapshots (D-037); CSVs byte-identical. Laptop check is now confirmation only |
 | I-021 | Low | Stage-adjusted S2 gap is a noisy estimator; tolerance widened, no action |
+| I-023 | Low | `ggplotly()` rewrites legends too — mitigated in `plots.R`; check rendered output, not the plot pane |
+| I-024 | Low | Local Quarto is RStudio's 1.3.353, callable only via the 8.3 short path; Connect Cloud runs newer |
 
 ---
 
@@ -92,14 +94,24 @@ Rscript --vanilla tests/verify_shared_layer.R
 Entry points: `caq_load_data()`, `caq_calculate_indicator()`, `caq_valid_stratifiers()`,
 `caq_suppress()`, `caq_suppression_caption()`, `caq_stratifiers()`.
 
-**The next task is the Day 3 Quarto report**, and nothing blocks it. The entry point stays at
-`facility-report.qmd` in the repository root (D-035) — do not move it to `report/`, as that
-breaks the Connect Cloud primary-file binding D-024 exists to protect. The palette is done:
-`R/theme.R` carries CAQ's real colours, adopted from `src/theme.R` in the private
-`DunnNAM/posit-presentation` repository (I-022, closed).
+**DONE 2026-08-19 — the Quarto report is written, rendered and verified.**
+`facility-report.qmd` replaces the probe content in place (D-024), with `R/plots.R` added as
+the shared plot layer. The I-016 `root.dir` walk-up is applied in the setup chunk, keyed on
+`R/metrics.R`. Renders clean; every figure was checked against the shared layer.
 
-Apply the I-016 `root.dir` mitigation in the report's setup chunk, replacing `smoke_shared.R`
-with a file that will still exist — `R/metrics.R` is the safe choice now.
+Render locally with (I-024 — Quarto is not on PATH here):
+
+```
+C:\PROGRA~1\RStudio\RESOUR~1\app\bin\quarto\bin\quarto.cmd render facility-report.qmd
+```
+
+**The next task is the Day 4 Shiny app.** It reuses `R/plots.R` directly — including
+`caq_plot_trend()`, which the report deliberately never calls (D-038). The app is where the S1
+year-by-year series is revealed, and where suppression actually fires (D-039).
+
+**Not yet done, and needed before the real report deploys:** regenerate `manifest.json`
+(I-015). The file list has changed substantially — `R/` gained five files, `data/` five, plus
+`data-raw/` and `tests/`, and the report now uses `gt`, `plotly` and `htmltools`.
 
 ### Specification
 

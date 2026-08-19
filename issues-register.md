@@ -455,6 +455,51 @@ copied from that repository.
    categorical colour scale is hard to read whatever the colours; prefer position over colour
    for high-cardinality variables.
 
+### I-023 — `ggplotly()` also rewrites legends, not just captions
+**Severity:** Low · **Status:** Mitigated in `R/plots.R` · **Raised:** 2026-08-19 ·
+**Extends:** I-004
+
+I-004 records that `ggplotly()` drops `subtitle` and `caption`. It does more than that: trace
+names are built from the interaction of **every** discrete aesthetic, `group` included. The
+funnel plot's control limits, which need `group` to keep the upper and lower bounds from
+joining into one line, produced legend entries reading `(95% limits,1)` and `(99.8% limits,1)`.
+
+Removing `group` is not available — the bounds would connect. Reshaping to long form and using
+a single layer did not help either; the compounding is on `group`, not on layer count.
+
+**Mitigation:** the limits are drawn with `show.legend = FALSE` and
+`scale_linetype_manual(guide = "none")`, and the line styles are named in the footnote text
+instead. This also keeps the legend to the one thing a reader must act on — which points are
+named. Verified in the rendered HTML: no `limits` traces remain, and the point legend survives.
+
+**Carried forward:** check the legend of any `ggplotly()` chart in the rendered output, not in
+the RStudio plot pane. The `ggplot` object looks correct in both cases.
+
+### I-024 — The RStudio-bundled Quarto cannot be invoked from a shell
+**Severity:** Low · **Status:** Worked around · **Raised:** 2026-08-19
+
+Quarto is not on `PATH` on the home machine. It exists only inside the RStudio installation at
+`C:/Program Files/RStudio/resources/app/bin/quarto`, and its `quarto.cmd` wrapper mishandles
+the space in `Program Files`, failing with:
+
+```
+error: Found argument 'Files\RStudio\...\deno.exe' which wasn't expected
+```
+
+This happens from Git Bash and from PowerShell alike. RStudio's Render button is unaffected
+because it invokes the binary differently.
+
+**Workaround:** call it through the 8.3 short path, with R on `PATH`:
+
+```
+C:\PROGRA~1\RStudio\RESOUR~1\app\bin\quarto\bin\quarto.cmd render facility-report.qmd
+```
+
+**Note the version gap.** The bundled Quarto is **1.3.353**; Connect Cloud's build host runs a
+considerably newer release. Nothing in the report uses recent Quarto features, but a local
+render succeeding is therefore weaker evidence than it looks. The first deployment of the real
+report is the actual test — do not treat a clean local render as proof.
+
 ---
 
 ## Low
