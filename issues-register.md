@@ -340,6 +340,63 @@ Claude Code sessions run at home.
 the change — a `D-###` or `I-###` entry is append-only in practice, so a conflict almost always
 means two additions, not a genuine contradiction.
 
+### I-019 — CSV round-trip drops factor ordering; `data_prep.R` must restore it
+**Severity:** Medium · **Status:** Open · **Due:** Day 2, with the shared layer ·
+**Raised:** 2026-08-19
+
+`age_group_5yr` and `age_group_10yr` are created as ordered factors by the generator, but CSV
+carries no type information: `readr::read_csv()` returns them as character. `sex`,
+`seifa_quintile`, `stage` and `hhs_residence` are likewise character on read, against the
+`fct` types specified in brief §6.
+
+**Currently harmless, and that is the trap.** The age-group labels happen to sort correctly
+under alphabetical ordering (`[25,30)` … `[90,Inf)`), so a plot axis looks right today.
+`stage` also happens to sort `I, II, III, IV, Unknown` correctly. Any relabelling — dropping
+the interval notation for "25–29", or renaming Unknown — silently breaks the ordering with no
+error, in a chart nobody re-checks.
+
+**Action:** `R/data_prep.R` converts all six columns to factors with explicit levels
+immediately after reading, and does so once for both products (D-010). Do not rely on the
+incidental sort order.
+
+### I-020 — Home machine cannot reproduce the lockfile environment
+**Severity:** Medium · **Status:** Open · **Owner:** Nathan · **Raised:** 2026-08-19
+
+`renv.lock` pins R 4.5.3. The home machine (see I-018) has 4.5.1, 4.5.2, 4.4.2 and 4.3.3 but
+not 4.5.3, and this clone has never had `renv::restore()` run against it — there is no project
+library here at all.
+
+The generator was therefore developed and run under R 4.5.2 against the **user** library, with
+`readr`, `tidyr`, `purrr` and `forcats` installed there to make it runnable. Nothing was
+installed into a project library and `renv.lock` was not modified, so the reproducibility
+artefact is untouched — but the data in `data/` was produced by an environment that the
+lockfile does not describe.
+
+**Why it is not a blocker:** the generator uses only `dplyr`, `tibble` and `readr` for
+ordinary data manipulation, with a fixed seed (D-001). Nothing in it is version-sensitive.
+
+**Action:** re-run the generator on the work laptop under the lockfile environment before the
+demonstration and confirm the CSVs are byte-identical. If they are not, the R version becomes
+part of the reproducibility story and must be narrated accordingly — the claim on screen is
+that a seeded script reproduces the data exactly (D-001, brief §1).
+
+### I-021 — The stage-adjusted S2 gap is a noisy estimator
+**Severity:** Low · **Status:** Open — tolerance widened, no action required ·
+**Raised:** 2026-08-19
+
+The stage-adjusted gap in D-030 is computed by direct standardisation: stage-specific surgery
+rates observed in the two S2 HHSs, applied to the stage mix of the rest of the state. Those
+rates come from ~2,800 lung patients split five ways, so the smaller stage strata carry real
+sampling error, and the comparator (the observed rest-of-state rate) carries its own.
+
+The realised ratio was 0.56 against a theoretical 0.44 — a gap larger than the multiplier's
+effect on it. Retuning `S2_ACCESS_MULTIPLIER` to chase the theoretical value would be fitting
+the parameter to one seed's noise.
+
+**Resolution:** the generator asserts the ratio within 0.40–0.60 rather than at a point value,
+and D-030 records the achieved figures. **If the seed changes, expect the ratio to move by
+several hundredths and do not treat that as a defect.**
+
 ---
 
 ## Low

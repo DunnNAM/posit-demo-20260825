@@ -1,0 +1,16 @@
+facility_id,facility_name,facility_hhs,facility_type,catchment_weight,volume_band
+F01,Ironbark Base Hospital,H1,Tertiary,0.15,High
+F02,Ironbark Northside,H1,Regional,0.085,Medium
+F03,Ironbark Riverview,H1,Regional,0.07,Medium
+F04,Ironbark Southbank,H1,Regional,0.11,High
+F05,Jacaranda General,H2,Tertiary,0.115,High
+F06,Jacaranda West,H2,Regional,0.07,Medium
+F07,Jacaranda Parklands,H2,Regional,0.055,Medium
+F08,Boronia Base Hospital,H3,Tertiary,0.105,High
+F09,Boronia Ridge,H3,Rural,0.018,Low
+F10,Boronia Coastal,H3,Regional,0.06,Medium
+F11,Wattle Base Hospital,H4,Regional,0.075,Medium
+F12,Wattle Downs,H4,Regional,0.045,Medium
+F13,Kurrajong District,H5,Rural,0.014,Low
+F14,Kurrajong Central,H5,Regional,0.017,Low
+F15,Melaleuca District,H6,Rural,0.011,Low

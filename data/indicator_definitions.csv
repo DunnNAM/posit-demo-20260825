@@ -1,0 +1,7 @@
+indicator_id,label,short_label,measure_type,cohort,result_col,facility_dims_allowed,direction,format,definition_text
+IND-01,Surgery rate,Surgery rate,proportion,all_diagnosed,had_surgery,FALSE,higher,percent,Proportion of all diagnosed patients who underwent surgical resection. Analysed by HHS of residence only.
+IND-02,Time to surgery,Time to surgery,median_iqr,surgical,days_to_surgery,TRUE,lower,days,"Median and interquartile range of days from diagnosis to surgery, surgical patients only."
+IND-03,Hospital-acquired complication,HAC,proportion,surgical,hac_flag,TRUE,lower,percent,Proportion of surgical patients recording a hospital-acquired complication.
+IND-04,Prolonged length of stay (>21 days),Prolonged LOS,proportion,surgical,prolonged_los_flag,TRUE,lower,percent,Proportion of surgical patients with a post-operative length of stay exceeding 21 days.
+IND-05,28-day unplanned readmission,Readmission,proportion,surgical,readmit_28d_flag,TRUE,lower,percent,Proportion of surgical patients with an unplanned readmission within 28 days of discharge.
+IND-06,Stage at diagnosis,Stage,distribution,all_diagnosed,stage,FALSE,none,percent,Distribution of stage at diagnosis across all diagnosed patients. Analysed by HHS of residence only.

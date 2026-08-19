@@ -217,6 +217,69 @@ read off the target ratio directly — 0.80 was chosen because it lands the rati
 distribution in D-029 is ever retuned, the multiplier must be re-solved to hold the ratio, and
 this decision amended.
 
+**Amended 2026-08-19 with the achieved figures.** The targets above were computed from the
+theoretical stage mix; the realised dataset (seed 20260824) differs slightly because the
+observed rest-of-state lung rate landed at 22.2% rather than 21.1%. Achieved:
+
+| Quantity | Target | Achieved |
+|---|---|---|
+| Crude S2 gap | ~8.2 pp | **10.1 pp** |
+| Stage-adjusted gap | ~4.2 pp | **5.7 pp** |
+| Adjusted ÷ crude | 0.51 | **0.56** |
+
+Stage therefore explains 44% of the gap and service access 56% — still "approximately half"
+as D-011 requires, so the multiplier was **not** retuned. Quote the achieved figures, not the
+targets, when narrating the drill-down. Note that the adjusted gap is a standardised estimate
+computed from stage-specific rates in a subgroup of ~2,800 patients and carries a percentage
+point or so of noise — see I-021.
+
+### D-031 — Signal S1 is assigned by exact count per facility-year, not sampled
+**Status:** Agreed · **Date:** 2026-08-19 · **Arises from:** first generator run
+
+Within the S1 facility and stream, each diagnosis year receives exactly its target number of
+prolonged stays, drawn without replacement, with a ±7% jitter on the target so the series
+still wobbles. Every other indicator, facility and patient remains a Bernoulli draw.
+
+**Rationale:** F04 holds ~115 surgical colorectal cases per year, where binomial noise on a
+12% rate is about ±3pp. Sampled independently, the 2015–17 baseline years landed at 18.5%,
+20.0% and 14.3% — **above** the 2018–19 values they are meant to sit below. The centrepiece
+chart showed a dip in the middle of a series whose entire purpose is to rise and then recover,
+which would have made the live narration false on screen.
+**Consequence:** S1 is a designed artefact (D-011) and is now constructed rather than
+discovered. The series lands identically on every run. The trade-off is that F04's line is
+smoother than its neighbours'; at ~115 cases a year this is not conspicuous, but do not
+describe the series as "sampled" if asked directly.
+
+### D-032 — IND-02 varies by tumour stream and by facility; the variation is not a signal
+**Status:** Agreed · **Date:** 2026-08-19 · **Arises from:** first generator run
+
+Time to surgery is drawn with a stream-specific scale (lung longest, breast shortest) and a
+per-facility multiplier in the narrow band 0.88–1.16.
+
+**Rationale:** on the first run every stream and every facility returned an identical median
+of 30 days, which made the facility-level view of IND-02 empty and the stream stratifier
+pointless. Achieved medians are Breast 27, Colorectal 31, Lung 36 days, with facility medians
+spanning 26–33 days.
+**Consequence:** the band is deliberately too narrow for any facility to breach a funnel-plot
+control limit. **The only facility-level outlier in this dataset is F04 on IND-04, which is
+S1.** The validation block asserts both halves of that: facilities must differ, and the
+highest facility median must stay below 1.6× the lowest.
+
+### D-033 — Same-HHS treatment preference weighted 15×, giving ~29% cross-HHS flow
+**Status:** Agreed · **Date:** 2026-08-19 · **Arises from:** first generator run
+
+Surgical patients are assigned a facility by catchment weight, with facilities in the
+patient's own HHS of residence weighted 15× higher.
+
+**Rationale:** the multiplier competes with catchment weight, so it has to be large. At 4×,
+53% of patients were treated outside their HHS of residence — a figure no one in the audience
+would believe. At 15× it settles at 28.8%, concentrated in H5 and H6, the two HHSs without a
+tertiary facility.
+**Consequence:** "HHS of treatment facility" is a genuinely distinct stratifier from "HHS of
+residence" (D-019), and the concentration of outflow in H5/H6 is coherent with the
+service-access story S2 tells about those same two HHSs. The validation block asserts the
+statewide flow stays between 20% and 40%.
+
 ---
 
 ## Technical and environment

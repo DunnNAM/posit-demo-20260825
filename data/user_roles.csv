@@ -1,0 +1,5 @@
+persona_id,persona_label,scope_type,scope_value,tumour_stream_scope
+statewide,Statewide Director,all,NA,NA
+hhs_exec,HHS Executive,hhs,H2,NA
+fac_dir,Facility Director,facility,F04,NA
+clinician,Clinician,facility,F04,Colorectal

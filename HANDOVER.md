@@ -61,14 +61,30 @@ needs no pruning.
 | I-016 | Medium | Divergent working directories — apply the `root.dir` mitigation in the Day 3 report |
 | I-017 | Low (presentation) | Free-tier content is public; state this explicitly during the demo |
 | I-018 | Medium | Two working copies (home, work laptop) — pull `--ff-only` on arrival, push before leaving |
+| I-019 | Medium | CSV drops factor ordering — `data_prep.R` must set explicit levels |
+| I-020 | Medium | Data generated under R 4.5.2 / user library, not the lockfile environment — re-run on the laptop |
+| I-021 | Low | Stage-adjusted S2 gap is a noisy estimator; tolerance widened, no action |
 
 ---
 
 ## 3. The immediate next task
 
-**Write `data-raw/generate_synthetic_data.R`.** Nothing else — no Quarto content, no Shiny
-content — until the data is settled and validated. This is a standing instruction from the
-user, not a scheduling preference.
+**DONE 2026-08-19 — `data-raw/generate_synthetic_data.R` is written, run and validated.**
+The five CSVs in `data/` are committed. All assertions pass; achieved magnitudes are recorded
+in D-030 (amended), D-031, D-032 and D-033.
+
+Achieved signal magnitudes, for narration:
+
+| Signal | What the data shows |
+|---|---|
+| **S1** | F04 colorectal prolonged LOS: 12.5 / 12.8 / 11.8% (2015–17), rising to **28.4% in 2023**, correcting to **9.8% in 2024**. The report's two periods show only 13.3% → 20.1%. |
+| **S2** | Lung surgery rate 22.2% rest of state vs **12.1%** in H5+H6 — a 10.1pp crude gap. |
+| **S3** | Stage IV in lung: 44.7% rest of state vs **53.3%** in H5+H6. Explains 44% of the S2 gap; 5.7pp of access residual remains. |
+
+**The next task is the shared `R/` layer** — `data_prep.R`, `metrics.R`, `suppression.R`,
+`theme.R`. Two things must be settled as part of it: **I-009** (stage "Unknown" handling —
+still open, and the data now carries Unknown at 3.4–5.4% per stream) and **I-019** (factor
+levels must be set explicitly on read).
 
 ### Specification
 
