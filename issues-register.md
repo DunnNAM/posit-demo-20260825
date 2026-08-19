@@ -11,8 +11,30 @@ ID scheme inherited from the existing MDT dashboard prototype.
 ## Blockers — must be resolved Day 1
 
 ### I-001 — Two Connect Cloud deployments from one repository: unverified
-**Severity:** Blocker · **Status:** Verifying — probe written, awaiting deployment ·
-**Owner:** Nathan · **Due:** Day 1
+**Severity:** Blocker · **Status:** **CLOSED 2026-08-19** — all checks resolved on Day 1 ·
+**Owner:** Nathan
+
+**Day 1 results.**
+
+| # | Check | Result |
+|---|---|---|
+| 1 | Both items deploy from one repository | **Pass** — via a single root `manifest.json`, not `renv.lock`. See D-017. |
+| 2 | Restore completes; duration | **Pass** — ~2s. Connect Cloud *provides* pre-built packages rather than installing them. Full deploy ~10s. No pruning needed. |
+| 3 | Working directory | **Pass, with a caveat** — the app runs from `/cloud/project`; the report renders in an ephemeral copy at `/tmp/<name>/rendered-output-<id>`. Different absolute paths, but both are the **root of the repository tree**, so relative-from-root paths resolve identically. See I-016. |
+| 4 | `source("R/smoke_shared.R")` | **Pass** in both products. |
+| 5 | `data/smoke_data.csv` readable | **Pass** in both products. |
+| 6 | `ggplot2` renders | **Pass** in both products. |
+| 7 | `bslib::font_google("Lato")` | **Pass** — app loaded without error. |
+| 8 | Private repository on this tier | **No** — free tier publishes from public repositories only; private repos require a paid plan. Repository stays public; I-005 becomes a hard constraint. |
+
+**Initial failure and resolution.** The first attempt failed: Connect Cloud requires
+`manifest.json` for R content and does not read `renv.lock`. Resolved by
+`rsconnect::writeManifest()`; see I-015 for the library/lockfile conflict encountered while
+generating it, and D-018 for the revised reproducibility narrative.
+
+**Unexpected finding.** A `manifest.json` placed in a content item's own subdirectory is
+ignored; Connect Cloud reads the root manifest and takes content type from the publish
+request. This simplified the layout rather than complicating it — see D-017.
 
 Connect Cloud deploys content from a Git repository by selecting a repo, branch and primary
 file. It is **not confirmed** that a single `renv.lock` at the repository root serves two
@@ -118,6 +140,87 @@ project. `renv::init()` writes the activating `.Rprofile` to the repository root
 RStudio at any other level leaves renv inactive and the session silently running against the
 system library. Fixing the working directory with `setwd()` is session-scoped and does not
 prevent recurrence.
+
+### I-016 — The two products run from different absolute paths
+**Severity:** Medium · **Status:** Open — mitigation designed, to apply on Day 3 ·
+**Raised:** 2026-08-19, Day 1
+
+The Shiny app runs from `/cloud/project`. The Quarto report renders in an ephemeral copy at
+`/tmp/<name>/rendered-output-<id>`. Both are the root of the repository tree, so
+relative-from-root paths resolve correctly in both — but the absolute paths differ, and the
+report's render directory is disposable.
+
+**Rules arising:**
+1. Never use absolute paths.
+2. Never assume the two products share a location.
+3. The report cannot cache anything to disk between renders.
+4. Files beside the `.qmd` need a `report/` prefix when referenced from inside it, because
+   the working directory is the tree root, not `report/`. Counterintuitive; expect it to catch
+   someone.
+
+**Unverified mechanism.** It is not established *why* Quarto renders with the working
+directory at the tree root rather than the document's own folder. The behaviour is observed,
+not explained, and could shift — adding a `_quarto.yml` for theming is exactly the kind of
+change that might alter execute-directory handling.
+
+**Mitigation to apply in the Day 3 report setup chunk:** walk up from the current directory
+until `R/smoke_shared.R` is visible, then set `knitr::opts_knit$set(root.dir = ...)` to that
+path. Correct under Connect Cloud, under the app's layout, and under a local render from
+`report/`. Removes the dependency on inferred behaviour.
+
+**Superseded advice:** an earlier proposal to set `root.dir = normalizePath("..")` was written
+assuming the working directory would be `report/`. It would have pushed above the tree root
+and broken every path. Never applied.
+
+### I-017 — Free-tier content is publicly accessible; sharing controls are a paid feature
+**Severity:** Low (presentation risk, not technical) · **Status:** Open ·
+**Owner:** Nathan · **Due:** before the presentation
+
+Connect Cloud's free tier publishes from public repositories only, and deployed content
+carries a public URL accessible to anyone with the link; the account's content page is also
+public. Private repositories require the Basic plan or above. Gated sharing — private links
+with revocable tokens, SSO, role-based access control — sits on higher tiers again.
+
+**Presentation risk.** Clinical leads A and B are likely to ask whether real facility data
+could be served this way. If the room infers that today's configuration is deployment-ready
+for real cancer data, that is a materially misleading impression to leave with a Senior
+Director.
+
+**Action:** state the limitation explicitly during the demonstration rather than waiting to be
+asked. The honest framing is that Connect Cloud does support gated content and identity-based
+access, but not on the tier being demonstrated. This also reinforces D-004 — when narrating
+"in production this comes from the authenticated session," that capability genuinely exists at
+the tiers CAQ would purchase.
+
+**Secondary note:** the free plan allows 20 active hours. Shiny applications consume active
+hours while running; static Quarto documents do not. Avoid leaving the app running during
+rehearsals this week.
+
+### I-015 — `writeManifest()` fails: library and lockfile out of sync
+**Severity:** Medium · **Status:** Open · **Owner:** Nathan · **Raised:** 2026-08-19, Day 1
+
+`rsconnect::writeManifest()` aborts with "Library and lockfile are out of sync". Installing
+`rsconnect` into the project library added it and its dependencies, but `renv::snapshot()`
+does not record them — renv's default snapshot mode captures only packages referenced by
+project code, and nothing in the project references `rsconnect`. A subsequent snapshot
+updated `openssl` and `rlang` but did not resolve the mismatch.
+
+**Underlying tension:** `rsconnect` is a local deployment tool, not a project dependency. It
+must be present to generate the manifest, but should not appear in the reproducibility
+artefact or in the deployed package set.
+
+**Resolution adopted:** call `writeManifest(dependencyResolution = "library")`, resolving
+versions from the installed library rather than the lockfile. The manifest's package list is
+derived from scanning bundled code, so the 18 packages declared in `dependencies.R` are
+captured while `rsconnect` — referenced by no bundled file — is not.
+
+**Rejected alternative:** `renv::snapshot(type = "all")` would sync the two by recording
+`rsconnect` and its dependencies in `renv.lock`, placing a local-only tool into the artefact
+presented as the project's reproducibility story.
+
+**Carried forward:** `manifest.json` must be regenerated whenever the file list or package set
+changes. This is a standing maintenance obligation introduced by the I-001 finding, and a
+plausible source of a stale-deployment failure later in the week.
 
 ### I-013 — Declaration-only file was executed by Shiny's `R/` auto-sourcing
 **Severity:** Medium · **Status:** Closed 2026-08-19 · **Owner:** Nathan · **Raised:** Day 1
@@ -243,6 +346,11 @@ anything itself. Verify on Day 3 by computing a headline figure in both and comp
 ---
 
 ## Closed
+
+### I-001 — Two Connect Cloud deployments from one repository
+**Closed:** 2026-08-19 · **Resolution:** all eight checks completed on Day 1. Layout resolved
+in D-017; reproducibility narrative corrected in D-018. Full result table retained under the
+Blockers section above for reference.
 
 ### I-002 — `pacman::p_load()` produces an incomplete `renv.lock`
 **Closed:** 2026-08-19 · **Resolution:** D-015. `pacman` is dropped from this project;
