@@ -150,11 +150,25 @@ presence. Kept deliberately light — one or two visible examples is sufficient.
 
 ## Technical and environment
 
-### D-018 — `renv` adopted
-**Status:** Agreed · **Date:** 2026-08-19
-`renv.lock` committed at repository root.
-**Rationale:** Required for Connect Cloud deployment, and aligns with the CAQ move to
-Posit Team. Gives Tech lead 2 the reproducible-environment talking point for free.
+### D-018 — `renv` adopted for local reproducibility; `manifest.json` is the deployment artefact
+**Status:** Agreed, **revised 2026-08-19** following Day 1 deployment evidence
+`renv.lock` is committed at the repository root. **Connect Cloud does not activate renv** —
+the Day 1 build log states that renv environments are not activated and that
+`renv/activate.R` is truncated to prevent accidental use. Dependencies are collected from
+`manifest.json` instead.
+
+**Rationale for retaining `renv` regardless:** it provides the reproducible local environment,
+aligns with the CAQ move to Posit Team, and is the source `rsconnect::writeManifest()` reads
+when pinning package versions into the manifest. Version pinning does travel to Connect
+Cloud — via the manifest rather than the lockfile.
+
+**Presentation consequence — important.** Do not claim that Connect Cloud restores
+`renv.lock`. It does not. The accurate narration is that `renv` pins the environment locally,
+`writeManifest()` transfers those pins into `manifest.json`, and Connect Cloud provisions
+from that. Tech lead 2 is likely to know the difference.
+
+**Performance note:** Connect Cloud reported it *provided* all 94 packages rather than
+installing them, in roughly two seconds. Packages are pre-built and cached server-side.
 
 ### D-015 — Explicit `library()` calls, not `pacman::p_load()`
 **Status:** Agreed · **Date:** 2026-08-19 · **Departs from:** existing prototype `global.R`
@@ -191,14 +205,35 @@ otherwise. Elsewhere, interactivity comes from inputs and `plotly` only adds fai
 **Consequence:** `ggplotly()` drops `subtitle` and `caption` from `ggplot` objects, so
 suppression footnotes on funnel plots must be rendered as separate UI text (see I-004).
 
-### D-017 — Flat repository root layout
-**Status:** Agreed · **Date:** 2026-08-19
-`app.R`, `facility-report.qmd`, `R/`, `data/` and `renv.lock` all sit at the repository
-root; both Connect Cloud deployments therefore share one working directory.
-**Rationale:** Two deployments from one repository with different working directories is a
-reliable source of "works locally, fails deployed" path errors. A flat root removes the
-class of failure entirely.
-**Consequence:** Slightly less tidy than nested `app/` and `report/` directories. Accepted.
+### D-017 — Repository layout: full clone, single root manifest, shared layer at root
+**Status:** **RESOLVED 2026-08-19** by Day 1 deployment evidence · **Supersedes** the original
+flat-root decision and the Option A/B/C choice raised earlier the same day.
+
+**Confirmed layout:**
+```
+/app.R                        Shiny entry point
+/manifest.json                SINGLE manifest, union of packages
+/R/                           Shared layer — one canonical copy
+/data/                        Committed synthetic CSVs
+/report/facility-report.qmd   Quarto entry point
+```
+
+**Evidence.** Connect Cloud performs a full `git clone` of the repository into
+`/cloud/project` and sets that as the working directory. The manifest's file list does not
+filter the bundle — the report deployed from `report/` successfully reached `R/` and `data/`
+at the root. The build log further showed that a manifest in the content's own subdirectory
+was **ignored**: Connect Cloud read the root manifest (94 packages, `appmode: shiny`) and took
+the content type from the publish request instead, noting the mismatch and proceeding.
+
+**Consequences:**
+1. One `manifest.json` at the root, carrying the union of both content items' packages.
+   `report/manifest.json` is redundant and should be deleted.
+2. Content type is selected per publish request in the Connect Cloud interface, not by the
+   manifest.
+3. The shared `R/` layer exists in exactly one place. **No build script, no duplicated files,
+   no staleness risk** — I-011 remains closed, which the earlier Option A proposal would have
+   reopened.
+4. `manifest.json` must be regenerated when the file list or package set changes (I-015).
 
 ---
 
@@ -252,6 +287,38 @@ Consequences adopted as project conventions:
 
 **Rationale:** discovered empirically on Day 1 — `lubridate` and `plotly` attached during a
 local app run despite `app.R` not calling `library()` for either.
+
+### D-026 — Render via the Quarto CLI; the `quarto` R package is not a dependency
+**Status:** Agreed · **Date:** 2026-08-19
+
+The report is rendered with the Quarto CLI — RStudio's Render button locally, and Connect
+Cloud's build host on deployment. The `quarto` R package is deliberately **not** added to
+`dependencies.R` or `renv.lock`.
+
+**Rationale:** the package is only a wrapper for invoking the CLI from an R session. Connect
+Cloud never calls it. Including it would add a dependency that serves local convenience only,
+against a project that is actively measuring restore time (I-001, check 2). `knitr` and
+`rmarkdown` remain declared — those are what the CLI actually needs to execute R chunks.
+
+**Consequence:** do not call `quarto::quarto_render()` in project code or documentation. Use
+the Render button, or `quarto render facility-report.qmd` from a terminal.
+
+### D-027 — Deploy source via the Git-backed flow, never pre-rendered output
+**Status:** Agreed · **Date:** 2026-08-19
+
+Both content items deploy by connecting the GitHub repository to Connect Cloud and letting
+Connect Cloud render the source on its own build host. Local rendering followed by a static
+upload (`quarto publish`, or the IDE "finished document only" option) is **not** used.
+
+**Rationale:** the demonstration's central claim is push-to-redeploy from Git. A pre-rendered
+upload has nothing to redeploy, never restores `renv.lock`, and executes no code on the
+host — which would leave I-001 checks 3 to 6 testing nothing at all. The Shiny app requires a
+live server process and must deploy from source regardless, so a static report would leave
+the presentation narrating two unrelated publishing mechanisms.
+
+**Consequence:** every content update reaches Connect Cloud by commit and push. Note that the
+IDE publishing dialog (rsconnect / Posit Publisher) is a different path from the Git-backed
+flow and should not be used for this project.
 
 ---
 

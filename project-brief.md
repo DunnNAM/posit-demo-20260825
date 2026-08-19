@@ -24,7 +24,7 @@ demonstration, not to produce a defensible clinical product.
 |---|---|
 | One-click publishing from Git | Push to GitHub → deploy in Connect Cloud UI, live on screen |
 | Connect hosts multiple content types in one place | Quarto report + Shiny app side by side in one Connect dashboard |
-| Reproducible environments travel between machines | `renv.lock` committed; deployment restores it |
+| Reproducible environments travel between machines | `renv.lock` pins versions locally; `writeManifest()` carries them into `manifest.json`, which Connect Cloud provisions from |
 | Dynamic content answers questions static content cannot | Planted signal S1 (see §6) is invisible in the report, obvious in the app |
 | Content can be tailored per viewer | "View as" persona switcher (see §5) |
 
